@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: postgres_weather
+    image: postgres:16.0
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - weather_db:/var/lib/postgresql/data
+
+volumes:
+  weather_db:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${WEATHER_DB_PATH}
