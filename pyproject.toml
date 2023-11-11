@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "how-much-climate-change"
+version = "0.1.0"
+description = ""
+authors = ["ali-ramadhan <ali.hh.ramadhan@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+python-dotenv = "^1.0.0"
+psycopg = {extras = ["binary"], version = "^3.1.12"}
+tqdm = "^4.66.1"
+xarray = "^2023.10.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

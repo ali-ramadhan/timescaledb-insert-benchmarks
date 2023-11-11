@@ -19,11 +19,12 @@ connection_string = (
 
 with psycopg.connect(connection_string) as conn:
     with conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS test (
-                id SERIAL PRIMARY KEY,
-                num INTEGER,
-                data VARCHAR
+        cur.execute(
+        """--sql
+            create table if not exists test (
+                id serial primary key,
+                num integer,
+                data varchar
             );
         """)
 
