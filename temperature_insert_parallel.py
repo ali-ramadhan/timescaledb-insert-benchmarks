@@ -29,7 +29,7 @@ def insert_time_sliced_date(n):
 
 ds = xr.open_dataset("e5.oper.an.sfc.128_167_2t.ll025sc.1995030100_1995033123.nc")
 
-Parallel(n_jobs=8)(
+Parallel(n_jobs=12)(
     delayed(insert_time_sliced_date)(n)
     for n in tqdm(range(len(ds.time)))
 )

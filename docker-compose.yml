@@ -2,14 +2,14 @@ version: '3'
 
 services:
   postgres:
-    container_name: postgres_weather
-    image: postgres:16.0
+    container_name: timescaledb_weather
+    image: timescale/timescaledb-ha:pg15.5-ts2.12.2
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
-      - weather_db:/var/lib/postgresql/data
+      - weather_db:/home/postgres/pgdata/data
 
 volumes:
   weather_db:

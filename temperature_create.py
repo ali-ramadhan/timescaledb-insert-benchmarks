@@ -14,11 +14,13 @@ engine = create_engine(f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTG
 with engine.connect() as conn:
     conn.execute(text("""--sql
         create table if not exists weather (
-            id serial primary key,
-            time timestamp,
-            latitude float,
-            longitude float,
-            temperature float
+            time timestamptz not null,
+            latitude float4,
+            longitude float4,
+            temperature float4
         );
     """))
+
+    conn.execute(text("select create_hypertable('weather', 'time');"))
+
     conn.commit()
