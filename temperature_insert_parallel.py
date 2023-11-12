@@ -13,19 +13,6 @@ POSTGRES_DB_NAME = os.getenv("POSTGRES_DB_NAME")
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 
-engine = create_engine(f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB_NAME}")
-
-with engine.connect() as conn:
-    conn.execute(text("""--sql
-        create table if not exists weather (
-            id serial primary key,
-            time timestamp,
-            latitude float,
-            longitude float,
-            temperature float
-        );
-    """))
-
 def insert_time_sliced_date(n):
     engine = create_engine(f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB_NAME}")
 
