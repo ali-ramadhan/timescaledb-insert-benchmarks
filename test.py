@@ -28,8 +28,8 @@ with psycopg.connect(connection_string) as conn:
             );
         """)
 
-        cur.execute("INSERT INTO test (num, data) VALUES (%s, %s)", (100, 'abc'))
-        cur.execute("INSERT INTO test (num, data) VALUES (%s, %s)", (200, 'def'))
-        cur.execute("INSERT INTO test (num, data) VALUES (%s, %s)", (300, 'ghi'))
+        cur.execute("insert into test (num, data) values (%s, %s)", (100, 'abc'))
+        cur.execute("insert into test (num, data) values (%s, %s)", (200, 'def'))
+        cur.execute("insert into test (num, data) values (%s, %s)", (300, 'ghi'))
 
         conn.commit()
