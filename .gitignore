@@ -4,6 +4,9 @@
 # NetCDF data files
 *.nc
 
+# Geonames
+cities500.txt
+
 ## GitHub's Python .gitignore
 
 # Byte-compiled / optimized / DLL files
