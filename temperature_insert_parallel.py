@@ -4,7 +4,7 @@ import xarray as xr
 from dotenv import load_dotenv
 from tqdm import tqdm
 from joblib import Parallel, delayed
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 
 load_dotenv()
 
@@ -13,7 +13,7 @@ POSTGRES_DB_NAME = os.getenv("POSTGRES_DB_NAME")
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 
-def insert_time_sliced_date(n):
+def insert_time_sliced_data(n):
     engine = create_engine(f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB_NAME}")
 
     ds = xr.open_dataset("e5.oper.an.sfc.128_167_2t.ll025sc.1995030100_1995033123.nc")
@@ -30,6 +30,6 @@ def insert_time_sliced_date(n):
 ds = xr.open_dataset("e5.oper.an.sfc.128_167_2t.ll025sc.1995030100_1995033123.nc")
 
 Parallel(n_jobs=12)(
-    delayed(insert_time_sliced_date)(n)
+    delayed(insert_time_sliced_data)(n)
     for n in tqdm(range(len(ds.time)))
 )

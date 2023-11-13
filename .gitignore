@@ -1,8 +1,9 @@
 # Sensitive environment variables
 .env
 
-# NetCDF data files
+# Data files
 *.nc
+*.zip
 
 # Geonames
 cities500.txt
