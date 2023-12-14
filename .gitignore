@@ -4,6 +4,7 @@
 # Data files
 *.nc
 *.zip
+*.csv
 
 # Geonames
 cities500.txt
