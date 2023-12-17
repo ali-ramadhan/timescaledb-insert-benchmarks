@@ -17,7 +17,7 @@ POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_DB_NAME = os.getenv("POSTGRES_DB_NAME")
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-RAMDISK_PATH = os.getenv("RAMDISK_PATH")
+CSV_PATH = os.getenv("CSV_PATH")
 
 def load_data(n):
     engine = create_engine(f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB_NAME}")
@@ -27,7 +27,7 @@ def load_data(n):
 
         conn.execute(text(f"""--sql
             copy weather
-            from '{RAMDISK_PATH}/weather_hour{n}.csv'
+            from '{CSV_PATH}/weather_hour{n}.csv'
             delimiter ','
             csv header;
         """))

@@ -31,7 +31,7 @@ POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_DB_NAME = os.getenv("POSTGRES_DB_NAME")
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-RAMDISK_PATH = os.getenv("RAMDISK_PATH")
+CSV_PATH = os.getenv("CSV_PATH")
 
 nc_filepaths = [
     "e5.oper.an.sfc.128_164_tcc.ll025sc.1995030100_1995033123.nc",
@@ -83,7 +83,7 @@ def write_csv(n):
 
     with Timer(f"[n={n:03d}] Saving csv"):
         df.to_csv(
-            f"{RAMDISK_PATH}/weather_hour{n}.csv",
+            f"{CSV_PATH}/weather_hour{n}.csv",
             index=False,
             header=False,
             date_format="%Y-%m-%d %H:%M:%S"

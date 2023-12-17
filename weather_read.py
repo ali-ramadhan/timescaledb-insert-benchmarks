@@ -31,7 +31,7 @@ POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_DB_NAME = os.getenv("POSTGRES_DB_NAME")
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-RAMDISK_PATH = os.getenv("RAMDISK_PATH")
+CSV_PATH = os.getenv("CSV_PATH")
 
 nc_filepaths = [
     "e5.oper.an.sfc.128_164_tcc.ll025sc.1995030100_1995033123.nc",
@@ -84,14 +84,14 @@ def insert_time_sliced_data(n):
 
     with Timer(f"[n={n:03d}] Saving csv"):
         # df.to_sql("weather", engine, if_exists="append", index=False)
-        df.to_csv(f"{RAMDISK_PATH}/weather_hour{n}.csv", index=False)
+        df.to_csv(f"{CSV_PATH}/weather_hour{n}.csv", index=False)
 
     with Timer(f"[n={n:03d}] Copying data into postgresql"):
         with engine.connect() as conn:
             t1 = time.perf_counter()
             conn.execute(text(f"""--sql
                 copy weather
-                from '{RAMDISK_PATH}/weather_hour{n}.csv'
+                from '{CSV_PATH}/weather_hour{n}.csv'
                 delimiter ','
                 csv header;
             """))
@@ -99,7 +99,7 @@ def insert_time_sliced_data(n):
             t2 = time.perf_counter()
             print(f"[n={n:03d}] inserted {df.shape[0]:,} rows in {t2 - t1:.3f} seconds = {int(df.shape[0] / (t2 - t1)):,} inserts/second")
 
-        os.remove(f"{RAMDISK_PATH}/weather_hour{n}.csv")
+        os.remove(f"{CSV_PATH}/weather_hour{n}.csv")
 
     return
 
