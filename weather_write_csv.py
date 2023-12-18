@@ -1,37 +1,12 @@
-import os
-import time
 import logging
 import xarray as xr
 
-from dotenv import load_dotenv
 from tqdm import tqdm
 from joblib import Parallel, delayed
-from sqlalchemy import create_engine, text
 
-
-class Timer:
-    def __init__(self, message="Execution time"):
-        self.message = message
-
-    def __enter__(self):
-        self.start = time.perf_counter()
-        return self
-
-    def __exit__(self, *args):
-        self.end = time.perf_counter()
-        self.interval = self.end - self.start
-        print(f"{self.message}: {self.interval:.4f} seconds.")
-
+from utils import Timer, get_engine
 
 logging.basicConfig(format='%(asctime)s %(message)s')
-
-load_dotenv()
-
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_DB_NAME = os.getenv("POSTGRES_DB_NAME")
-POSTGRES_USER = os.getenv("POSTGRES_USER")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-CSV_PATH = os.getenv("CSV_PATH")
 
 nc_filepaths = [
     "e5.oper.an.sfc.128_164_tcc.ll025sc.1995030100_1995033123.nc",
@@ -51,10 +26,17 @@ cols_renamed = {
     "sf": "snowfall"
 }
 
+def latlon_to_location_id(lats, lons, dlat=0.25, dlon=0.25, min_lat=-90, min_lon=-179.75):
+    n_lats = int(180 / dlat) + 1  # +1 to include both endpoints (poles)
+    n_lons = int(360 / dlon)
+    lat_indices = ((lats - min_lat) / dlat).astype(int)
+    lon_indices = ((lons - min_lon) / dlon).astype(int)
+    return lat_indices * n_lons + lon_indices + 1
+
 def write_csv(n):
     with Timer(f"[n={n:03d}] Loading data"):
         ds = xr.open_mfdataset(nc_filepaths)
-        df = ds.isel(time=0).to_dataframe().reset_index()
+        df = ds.isel(time=n).to_dataframe().reset_index()
 
         df.drop(columns=["utc_date"], inplace=True)
         df.rename(columns=cols_renamed, inplace=True)
@@ -63,14 +45,16 @@ def write_csv(n):
         df["total_precipitation"] *= 1000  # m to mm
         df["snowfall"] *= 1000  # m to mm
 
+        # Convert latitude from [0, 360) degrees East to [-180, 180) degrees East.
         df.rename(columns={"longitude": "longitude_east"}, inplace=True)
         df["longitude"] = df["longitude_east"].apply(lambda x: x - 360 if x > 180 else x)
         df.drop(columns=["longitude_east"], inplace=True)
 
-        
+        df["location_id"] = latlon_to_location_id(df.latitude, df.longitude)
 
         df = df[[
             "time",
+            "location_id",
             "latitude",
             "longitude",
             "temperature_2m",
@@ -81,7 +65,7 @@ def write_csv(n):
             "snowfall"
         ]]
 
-    with Timer(f"[n={n:03d}] Saving csv"):
+    with Timer(f"[n={n:03d}] Saving csv", n=df.shape[0]):
         df.to_csv(
             f"{CSV_PATH}/weather_hour{n}.csv",
             index=False,
@@ -91,7 +75,10 @@ def write_csv(n):
 
     return
 
-Parallel(n_jobs=24)(
-    delayed(write_csv)(n)
-    for n in tqdm(range(100))
-)
+if __name__ == "__main__":
+    ds = xr.open_dataset("e5.oper.an.sfc.128_167_2t.ll025sc.1995030100_1995033123.nc")
+
+    Parallel(n_jobs=24)(
+        delayed(write_csv)(n)
+        for n in tqdm(range(len(ds.time)))
+    )
