@@ -11,26 +11,6 @@ POSTGRES_DB_NAME = os.getenv("POSTGRES_DB_NAME")
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 
-class Timer:
-    def __init__(self, message="Execution time", n=None, units="operations"):
-        self.message = message
-        self.n = n
-        self.units = units
-
-    def __enter__(self):
-        print(f"{self.message}: started.")
-        self.start = time.perf_counter()
-        return self
-
-    def __exit__(self, *args):
-        self.end = time.perf_counter()
-        self.interval = self.end - self.start
-        if self.n and self.units:
-            rate = self.n / self.interval
-            print(f"{self.message}: {self.interval:.4f} seconds (n={self.n}, {rate:.2f} {self.units} per second).")
-        else:
-            print(f"{self.message}: {self.interval:.4f} seconds.")
-
 def latlon_to_location_id(lat, lon, dlat=0.25, dlon=0.25, min_lat=-90, min_lon=-179.75):
     if not (min_lat <= lat <= 90) or not (min_lon <= lon <= 180):
         raise ValueError(f"(lat, lon) = ({lat}, {lon}) is not a valid location!")
