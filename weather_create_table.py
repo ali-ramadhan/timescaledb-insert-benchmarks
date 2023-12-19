@@ -1,16 +1,20 @@
 import argparse
+
 from sqlalchemy import text
+
 from utils import get_engine
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Create a weather table in Postgres.")
+    parser = argparse.ArgumentParser(
+        description="Create a weather table in Postgres."
+    )
 
     parser.add_argument(
-        "--unlogged",
-        dest="unlogged",
+        "--drop-table",
+        dest="drop_table",
         action="store_true",
         default=False,
-        help="Make the table unlogged."
+        help="Drop the table if it exists beforehand."
     )
 
     parser.add_argument(
@@ -20,6 +24,14 @@ def parse_args():
         default=False,
         help="Convert the table into a TimescaleDB hypertable."
     )
+
+    parser.add_argument(
+        "--unlogged",
+        dest="unlogged",
+        action="store_true",
+        default=False,
+        help="Make the table unlogged."
+    )
     
     return parser.parse_args()
 
@@ -28,6 +40,9 @@ def main(args):
     engine = get_engine()
 
     with engine.connect() as conn:
+        if args.drop_table:
+            conn.execute(text("drop table if exists weather;"))
+        
         unlogged = "unlogged" if args.unlogged else ""
         table_creation_query = f"""--sql
             create {unlogged} table if not exists weather (
