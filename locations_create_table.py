@@ -62,3 +62,16 @@ if __name__ == "__main__":
     ds = xr.open_dataset("e5.oper.an.sfc.128_167_2t.ll025sc.1995030100_1995033123.nc")
     engine = create_engine(f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB_NAME}")
     create_and_populate_locations_table(ds, engine)
+
+# """--sql
+# longitude_east
+# ALTER TABLE weather ADD COLUMN location geography(Point, 4326);
+# UPDATE weather SET location = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326);
+# """
+
+# ALTER TABLE example SET (                                                         
+#   timescaledb.compress,
+#   timescaledb.compress_segmentby = 'location'
+# );
+# SELECT compress_chunk(i, if_not_compressed => true) FROM show_chunks('weather') i;
+# SELECT add_compression_policy('weather', INTERVAL '0 days');
