@@ -4,7 +4,7 @@ import xarray as xr
 from tqdm import tqdm
 from joblib import Parallel, delayed
 
-from utils import Timer, get_engine
+from utils import Timer
 
 logging.basicConfig(format='%(asctime)s %(message)s')
 

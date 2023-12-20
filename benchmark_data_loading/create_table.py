@@ -2,7 +2,7 @@ import argparse
 
 from sqlalchemy import text
 
-from utils import get_engine
+from utils import get_sqlalchemy_engine
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -37,7 +37,7 @@ def parse_args():
 
 
 def main(args):
-    engine = get_engine()
+    engine = get_sqlalchemy_engine()
 
     with engine.connect() as conn:
         if args.drop_table:
