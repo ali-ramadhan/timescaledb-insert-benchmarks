@@ -31,3 +31,5 @@ awk 'NR > 1 {print $0",false"}' benchmark_insert_nohypertable.csv >> "$merged_cs
 awk 'NR > 1 {print $0",true"}' benchmark_insert_hypertable.csv >> "$merged_csv"
 rm benchmark_insert_nohypertable.csv
 rm benchmark_insert_hypertable.csv
+
+poetry run python plot_insert_benchmarks.py

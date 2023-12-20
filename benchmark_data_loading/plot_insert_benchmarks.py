@@ -51,6 +51,8 @@ ax.bar(
 ax.set_ylabel("Inserts per second")
 ax.set_xticks(x)
 ax.set_xticklabels(methods)
-ax.legend()
+ax.legend(frameon=False)
+
+plt.savefig("insert_benchmarks.png", dpi=100, transparent=True)
 
 plt.show()
