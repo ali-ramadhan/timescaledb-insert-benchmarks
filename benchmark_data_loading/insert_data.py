@@ -130,7 +130,7 @@ def insert_data_using_pandas(df, timer, args):
     engine = get_sqlalchemy_engine()
 
     with timer:
-        df.to_sql("weather", engine, if_exists="append", index=False)
+        df.to_sql("weather", engine, if_exists="append", index=False, chunksize=1)
     
     return
 
