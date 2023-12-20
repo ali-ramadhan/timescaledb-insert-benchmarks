@@ -25,10 +25,18 @@ def parse_args():
         choices=["pandas", "psycopg3", "sqlalchemy"],
         help="How to insert rows into the table."
     )
+
+    parser.add_argument(
+        "--benchmark-file",
+        type=str,
+        help="Filepath to output benchmarks to a CSV file."
+    )
     
     return parser.parse_args()
 
-def log_benchmark(args, timer, filepath="benchmark_insert.csv"):
+def log_benchmark(args, timer):
+    filepath = args.benchmark_file
+    
     # Create file and write CSV header
     if not Path(filepath).exists():
         with open(filepath, "a") as file:
@@ -41,11 +49,21 @@ def log_benchmark(args, timer, filepath="benchmark_insert.csv"):
 
 def insert_data_using_psycopg3(df, timer, args):
     with get_psycopg3_connection() as conn, conn.cursor() as cur, timer:
+        insert_query = """
+            INSERT INTO weather (
+                time,
+                location_id,
+                latitude,
+                longitude,
+                temperature_2m,
+                zonal_wind_10m,
+                meridional_wind_10m,
+                total_cloud_cover,
+                total_precipitation,
+                snowfall
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
         for index, row in df.iterrows():
-            insert_query = """
-                INSERT INTO weather (time, location_id, latitude, longitude, temperature_2m, zonal_wind_10m, meridional_wind_10m, total_cloud_cover, total_precipitation, snowfall) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
             cur.execute(insert_query, (
                 row.time,
                 row.location_id,
@@ -67,12 +85,32 @@ def insert_data_using_sqlalchemy(df, timer, args):
     engine = get_sqlalchemy_engine()
 
     with engine.connect() as conn, timer:
+        insert_query = """
+            INSERT INTO weather (
+                time,
+                location_id,
+                latitude,
+                longitude,
+                temperature_2m,
+                zonal_wind_10m,
+                meridional_wind_10m,
+                total_cloud_cover,
+                total_precipitation,
+                snowfall
+            ) VALUES (
+                :time,
+                :location_id,
+                :latitude,
+                :longitude,
+                :temperature_2m,
+                :zonal_wind_10m,
+                :meridional_wind_10m,
+                :total_cloud_cover,
+                :total_precipitation,
+                :snowfall
+            )
+        """
         for index, row in df.iterrows():
-            insert_query = """
-                INSERT INTO weather (time, location_id, latitude, longitude, temperature_2m, zonal_wind_10m, meridional_wind_10m, total_cloud_cover, total_precipitation, snowfall) 
-                VALUES (:time, :location_id, :latitude, :longitude, :temperature_2m, :zonal_wind_10m, :meridional_wind_10m, :total_cloud_cover, :total_precipitation, :snowfall)
-            """
-
             conn.execute(text(insert_query), {
                 "time": row.time,
                 "location_id": row.location_id,
@@ -96,7 +134,10 @@ def insert_data_using_pandas(df, timer, args):
     
     return
 
-def insert_data(df, args):
+def main(args):
+    df = weather_dataframe(0)
+    df = df.head(args.num_rows)
+
     timer = Timer(
         f"Inserting data row-by-row using {args.method}",
         n=len(df.index),
@@ -111,13 +152,7 @@ def insert_data(df, args):
         insert_data_using_pandas(df, timer, args)
 
     log_benchmark(args, timer)
-    return
 
-
-def main(args):
-    df = weather_dataframe(0)
-    df = df.head(args.num_rows)
-    insert_data(df, args)
     return
 
 if __name__ == "__main__":

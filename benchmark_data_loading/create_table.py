@@ -11,7 +11,6 @@ def parse_args():
 
     parser.add_argument(
         "--drop-table",
-        dest="drop_table",
         action="store_true",
         default=False,
         help="Drop the table if it exists beforehand."
@@ -19,7 +18,6 @@ def parse_args():
 
     parser.add_argument(
         "--create-hypertable",
-        dest="create_hypertable",
         action="store_true",
         default=False,
         help="Convert the table into a TimescaleDB hypertable."
@@ -27,7 +25,6 @@ def parse_args():
 
     parser.add_argument(
         "--unlogged",
-        dest="unlogged",
         action="store_true",
         default=False,
         help="Make the table unlogged."
