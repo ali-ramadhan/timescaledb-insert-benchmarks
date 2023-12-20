@@ -2,19 +2,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def round_to_significant_figures(x, sig=3):
-    if x == 0:
-        return 0
-    else:
-        return round(x, sig - int(np.floor(np.log10(np.abs(x)))) - 1)
-
 df = pd.read_csv("benchmark_insert.csv")
 
 pt = pd.pivot_table(df,
     values="rate",
     index=["method", "hypertable"],
     aggfunc=["mean", "std", "min", "max"]
-) # .applymap(lambda x: round_to_significant_figures(x, 3))
+)
 
 fig, ax = plt.subplots()
 
@@ -50,7 +44,7 @@ ax.bar(
 
 ax.bar(
     x + width/2,
-    pt["mean"]["rate"].xs(True, level="hypertable"),
+    mean_rates_ht,
     width,
     yerr=range_hypertable,
     label="Hypertable"

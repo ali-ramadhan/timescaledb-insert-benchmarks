@@ -1,8 +1,6 @@
-import time
 import argparse
 from pathlib import Path
 
-from tqdm import tqdm
 from sqlalchemy import text
 
 from write_csv import weather_dataframe
@@ -11,7 +9,7 @@ from utils import get_sqlalchemy_engine, get_psycopg3_connection
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Load data into the weather table using inserts."
+        description="Load data into the weather table using row-by-row inserts."
     )
 
     parser.add_argument(
