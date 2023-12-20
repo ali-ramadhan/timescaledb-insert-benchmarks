@@ -33,6 +33,9 @@ def parse_args():
     
     return parser.parse_args()
 
+def insert_data_pandas():
+    pass
+
 def main(args):
     df = weather_dataframe(0)
     df = df.head(args.num_rows)
