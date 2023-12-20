@@ -3,7 +3,7 @@ version: '3'
 services:
   postgres:
     container_name: timescaledb_weather
-    image: timescale/timescaledb-ha:pg15.5-ts2.12.2
+    image: timescale/timescaledb-ha:pg16-ts2.13
     command: >
       postgres
       -c min_wal_size=4GB
@@ -12,9 +12,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
-    volumes:
-      - weather_db:/home/postgres/pgdata/data
-      - /mnt/:/mnt/
 
 volumes:
   weather_db:
