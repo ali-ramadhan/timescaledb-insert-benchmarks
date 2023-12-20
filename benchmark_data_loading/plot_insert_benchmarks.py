@@ -22,21 +22,29 @@ methods = pt.index.get_level_values("method").unique()
 x = np.arange(len(methods))
 width = 0.35  # the width of the bars
 
-error_margin_no_hypertable = [
-    (pt["mean"]["rate"].xs(False, level="hypertable") - pt["min"]["rate"].xs(False, level="hypertable")),
-    (pt["max"]["rate"].xs(False, level="hypertable") - pt["mean"]["rate"].xs(False, level="hypertable"))
+mean_rates_nht = pt["mean"]["rate"].xs(False, level="hypertable")
+min_rates_nht = pt["min"]["rate"].xs(False, level="hypertable")
+max_rates_nht = pt["min"]["rate"].xs(False, level="hypertable")
+
+mean_rates_ht = pt["mean"]["rate"].xs(True, level="hypertable")
+min_rates_ht = pt["min"]["rate"].xs(True, level="hypertable")
+max_rates_ht = pt["min"]["rate"].xs(True, level="hypertable")
+
+range_no_hypertable = [
+    mean_rates_nht - min_rates_nht,
+    max_rates_nht - mean_rates_nht
 ]
 
-error_margin_hypertable = [
-    (pt["mean"]["rate"].xs(True, level="hypertable") - pt["min"]["rate"].xs(True, level="hypertable")),
-    (pt["max"]["rate"].xs(True, level="hypertable") - pt["mean"]["rate"].xs(True, level="hypertable"))
+range_hypertable = [
+    mean_rates_ht - min_rates_ht,
+    max_rates_ht - mean_rates_ht
 ]
 
 ax.bar(
     x - width/2,
-    pt["mean"]["rate"].xs(False, level="hypertable"),
+    mean_rates_nht,
     width,
-    yerr=error_margin_no_hypertable,
+    yerr=range_no_hypertable,
     label="No Hypertable"
 )
 
@@ -44,7 +52,7 @@ ax.bar(
     x + width/2,
     pt["mean"]["rate"].xs(True, level="hypertable"),
     width,
-    yerr=error_margin_hypertable,
+    yerr=range_hypertable,
     label="Hypertable"
 )
 
@@ -54,5 +62,3 @@ ax.set_xticklabels(methods)
 ax.legend(frameon=False)
 
 plt.savefig("insert_benchmarks.png", dpi=100, transparent=True)
-
-plt.show()
