@@ -1,11 +1,13 @@
 import time
 import argparse
+from pathlib import Path
 
 from tqdm import tqdm
 from sqlalchemy import text
 
 from write_csv import weather_dataframe
-from utils import Timer, get_sqlalchemy_engine, get_psycopg3_connection
+from timer import Timer
+from utils import get_sqlalchemy_engine, get_psycopg3_connection
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -23,28 +25,21 @@ def parse_args():
         choices=["pandas", "psycopg3", "sqlalchemy"],
         help="How to insert rows into the table."
     )
-
-    parser.add_argument(
-        "--benchmark",
-        dest="benchmark",
-        action="store_true",
-        default=False,
-        help="Benchmark insertion performance to a CSV file."
-    )
     
     return parser.parse_args()
 
-def log_benchmark(args, timer):
-    pass
+def log_benchmark(args, timer, filepath="benchmark_insert.csv"):
+    # Create file and write CSV header
+    if not Path(filepath).exists():
+        with open(filepath, "a") as file:
+            file.write("method,num_rows,seconds,rate,units\n")
+    
+    with open(filepath, "a") as file:
+        file.write(f"{args.method},{args.num_rows},{timer.interval},{timer.rate},{timer.units}\n")
+    
+    return
 
-def insert_data_using_psycopg3(df, args):
-    timer = Timer(
-        f"Inserting data row-by-row using psycopg3",
-        n=len(df.index),
-        units="inserts",
-        filepath=f"benchmark_insert_psycopg3_{args.num_rows}rows.csv"
-    )
-
+def insert_data_using_psycopg3(df, timer, args):
     with get_psycopg3_connection() as conn, conn.cursor() as cur, timer:
         for index, row in df.iterrows():
             insert_query = """
@@ -65,19 +60,13 @@ def insert_data_using_psycopg3(df, args):
             ))
 
         conn.commit()
+
     return
 
-def insert_data_using_sqlalchemy(df, args):
+def insert_data_using_sqlalchemy(df, timer, args):
     engine = get_sqlalchemy_engine()
 
-    timer = Timer(
-        f"Inserting data row-by-row using pandas",
-        n=len(df.index),
-        units="inserts",
-        filepath=f"benchmark_insert_sqlalchemy_{args.num_rows}rows.csv"
-    )
-
-    with timer, engine.connect() as conn:
+    with engine.connect() as conn, timer:
         for index, row in df.iterrows():
             insert_query = """
                 INSERT INTO weather (time, location_id, latitude, longitude, temperature_2m, zonal_wind_10m, meridional_wind_10m, total_cloud_cover, total_precipitation, snowfall) 
@@ -96,34 +85,39 @@ def insert_data_using_sqlalchemy(df, args):
                 "total_precipitation": row.total_precipitation,
                 "snowfall": row.snowfall
             })
+    
     return
 
-def insert_data_using_pandas(df, args):
+def insert_data_using_pandas(df, timer, args):
     engine = get_sqlalchemy_engine()
-
-    timer = Timer(
-        f"Inserting data row-by-row using pandas",
-        n=len(df.index),
-        units="inserts",
-        filepath=f"benchmark_insert_pandas_{args.num_rows}rows.csv"
-    )
 
     with timer:
         df.to_sql("weather", engine, if_exists="append", index=False)
     
     return
 
+def insert_data(df, args):
+    timer = Timer(
+        f"Inserting data row-by-row using {args.method}",
+        n=len(df.index),
+        units="inserts"
+    )
+
+    if args.method == "psycopg3":
+        insert_data_using_psycopg3(df, timer, args)
+    elif args.method == "sqlalchemy":
+        insert_data_using_sqlalchemy(df, timer, args)
+    elif args.method == "pandas":
+        insert_data_using_pandas(df, timer, args)
+
+    log_benchmark(args, timer)
+    return
+
+
 def main(args):
     df = weather_dataframe(0)
     df = df.head(args.num_rows)
-
-    if args.method == "psycopg3":
-        insert_data_using_psycopg3(df, args)
-    elif args.method == "sqlalchemy":
-        insert_data_using_sqlalchemy(df, args)
-    elif args.method == "pandas":
-        insert_data_using_pandas(df, args)
-
+    insert_data(df, args)
     return
 
 if __name__ == "__main__":
