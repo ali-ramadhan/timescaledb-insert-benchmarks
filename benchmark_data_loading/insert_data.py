@@ -25,7 +25,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--benchmark-file",
+        "--benchmarks-file",
         type=str,
         help="Filepath to output benchmarks to a CSV file."
     )
@@ -33,7 +33,7 @@ def parse_args():
     return parser.parse_args()
 
 def log_benchmark(args, timer):
-    filepath = args.benchmark_file
+    filepath = args.benchmarks_file
     
     # Create file and write CSV header
     if not Path(filepath).exists():

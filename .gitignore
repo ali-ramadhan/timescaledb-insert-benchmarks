@@ -6,6 +6,9 @@
 *.zip
 *.csv
 
+# Plots
+*.png
+
 # Geonames
 cities500.txt
 
