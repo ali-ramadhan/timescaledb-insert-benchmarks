@@ -34,7 +34,7 @@ def latlon_to_location_id(lats, lons, dlat=0.25, dlon=0.25, min_lat=-90, min_lon
     return lat_indices * n_lons + lon_indices + 1
 
 def weather_dataframe(n):
-    with Timer(f"[n={n:03d}] Loading data"):
+    with Timer(f"Loading data"):
         ds = xr.open_mfdataset(nc_filepaths)
         df = ds.isel(time=n).to_dataframe().reset_index()
 

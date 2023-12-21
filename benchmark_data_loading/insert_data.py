@@ -15,19 +15,22 @@ def parse_args():
     parser.add_argument(
         "--num-rows",
         type=int,
-        help="Number of rows to insert."
+        help="Number of rows to insert.",
+        required=True
     )
 
     parser.add_argument(
         "--method",
         choices=["pandas", "psycopg3", "sqlalchemy"],
-        help="How to insert rows into the table."
+        help="How to insert rows into the table.",
+        required=True
     )
 
     parser.add_argument(
         "--benchmarks-file",
         type=str,
-        help="Filepath to output benchmarks to a CSV file."
+        help="Filepath to output benchmarks to a CSV file.",
+        required=True
     )
     
     return parser.parse_args()

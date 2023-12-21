@@ -13,7 +13,8 @@ def parse_args():
     parser.add_argument(
         "--benchmarks-file",
         type=str,
-        help="Filepath to a benchmarks CSV file."
+        help="Filepath to a benchmarks CSV file.",
+        required=True
     )
     
     return parser.parse_args()
