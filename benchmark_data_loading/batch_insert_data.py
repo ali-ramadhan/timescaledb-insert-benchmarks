@@ -65,20 +65,9 @@ def batch_insert_data_using_psycopg3(df, timer, args):
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         with Timer("Constructing data tuples"):
-            data_tuples = [
-                (
-                    row.time,
-                    row.location_id,
-                    row.latitude,
-                    row.longitude,
-                    row.temperature_2m,
-                    row.zonal_wind_10m,
-                    row.meridional_wind_10m,
-                    row.total_cloud_cover,
-                    row.total_precipitation,
-                    row.snowfall
-                ) for index, row in df.iterrows()
-            ]
+            data_tuples = []
+            for row in df.itertuples(index=False):
+                data_tuples.append(tuple(row))
 
         cur.executemany(insert_query, data_tuples)
         conn.commit()
@@ -115,20 +104,7 @@ def batch_insert_data_using_sqlalchemy(df, timer, args):
             )
         """
         with Timer("Constructing data dicts"):
-            data_dicts = [
-                {
-                    "time": row.time,
-                    "location_id": row.location_id,
-                    "latitude": row.latitude,
-                    "longitude": row.longitude,
-                    "temperature_2m": row.temperature_2m,
-                    "zonal_wind_10m": row.zonal_wind_10m,
-                    "meridional_wind_10m": row.meridional_wind_10m,
-                    "total_cloud_cover": row.total_cloud_cover,
-                    "total_precipitation": row.total_precipitation,
-                    "snowfall": row.snowfall
-                } for index, row in df.iterrows()
-            ]
+            data_dicts = df.to_dict("records")
         
         conn.execute(text(insert_query), data_dicts)
     
