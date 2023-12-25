@@ -29,6 +29,7 @@ merged_csv="benchmarks_insert.csv"
 
 if [ -f "$merged_csv" ]; then
     rm "$merged_csv"
+fi
 
 echo "method,num_rows,seconds,rate,units,hypertable" > "$merged_csv"
 awk 'NR > 1 {print $0",false"}' benchmarks_insert_nohypertable.csv >> "$merged_csv"

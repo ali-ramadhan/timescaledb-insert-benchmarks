@@ -26,14 +26,38 @@ def parse_args():
         required=True
     )
 
-    # parser.add_argument(
-    #     "--benchmarks-file",
-    #     type=str,
-    #     help="Filepath to output benchmarks to a CSV file.",
-    #     required=True
-    # )
+    parser.add_argument(
+        "--benchmarks-file",
+        type=str,
+        help="Filepath to output benchmarks to a CSV file.",
+        required=True
+    )
     
     return parser.parse_args()
+
+def log_benchmark(args, timer):
+    filepath = args.benchmarks_file
+    
+    # Create file and write CSV header
+    if not Path(filepath).exists():
+        with open(filepath, "a") as file:
+            file.write("method,num_rows,seconds,rate,units\n")
+    
+    with open(filepath, "a") as file:
+        file.write(f"{args.method},1038240,{timer.interval},{timer.rate},{timer.units}\n")
+    
+    return
+
+def copy_data_using_psycopg3(timer, args):
+    with get_psycopg3_connection() as conn, conn.cursor() as cur, timer:
+        cur.execute(f"""--sql
+            copy weather
+            from '{args.csv_filepath}'
+            delimiter ','
+            csv header;
+        """)
+        conn.commit()
+    return
 
 def copy_data_using_sqlalchemy(timer, args):
     engine = get_sqlalchemy_engine()
@@ -61,7 +85,7 @@ def main(args):
     elif args.method == "pandas":
         copy_data_using_pandas(timer, args)
 
-    # log_benchmark(args, timer)
+    log_benchmark(args, timer)
 
     return
 
