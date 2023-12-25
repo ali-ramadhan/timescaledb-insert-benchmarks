@@ -34,7 +34,7 @@ def latlon_to_location_id(lats, lons, dlat=0.25, dlon=0.25, min_lat=-90, min_lon
     return lat_indices * n_lons + lon_indices + 1
 
 def weather_dataframe(n):
-    with Timer(f"Loading data"):
+    with Timer(f"Loading data for hour {n}"):
         ds = xr.open_mfdataset(nc_filepaths)
         df = ds.isel(time=n).to_dataframe().reset_index()
 
@@ -69,9 +69,10 @@ def weather_dataframe(n):
 
 def write_csv(n):
     df = weather_dataframe(n)
-    with Timer(f"[n={n:03d}] Saving csv", n=df.shape[0]):
+    filepath = f"{CSV_PATH}/weather_hour{n}.csv"
+    with Timer(f"Saving {filepath}", n=df.shape[0]):
         df.to_csv(
-            f"{CSV_PATH}/weather_hour{n}.csv",
+            filepath,
             index=False,
             header=False,
             date_format="%Y-%m-%d %H:%M:%S"
