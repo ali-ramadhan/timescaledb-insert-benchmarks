@@ -57,6 +57,7 @@ def main(args):
         mean_rates_nht,
         width,
         yerr=range_no_hypertable,
+        capsize=5,
         label="No Hypertable"
     )
 
@@ -65,6 +66,7 @@ def main(args):
         mean_rates_ht,
         width,
         yerr=range_hypertable,
+        capsize=5,
         label="Hypertable"
     )
 

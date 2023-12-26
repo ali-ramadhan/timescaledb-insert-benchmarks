@@ -31,7 +31,7 @@ if [ -f "$merged_csv" ]; then
     rm "$merged_csv"
 fi
 
-echo "method,hour,num_rows,seconds_full,rate_full,units_full,seconds_copy,rate_copy,units_copy" > "$merged_csv"
+echo "method,hour,num_rows,seconds_full,rate_full,units_full,seconds_copy,rate_copy,units_copy,hypertable" > "$merged_csv"
 awk 'NR > 1 {print $0",false"}' benchmarks_copy_nohypertable.csv >> "$merged_csv"
 awk 'NR > 1 {print $0",true"}' benchmarks_copy_hypertable.csv >> "$merged_csv"
 rm benchmarks_copy_nohypertable.csv
