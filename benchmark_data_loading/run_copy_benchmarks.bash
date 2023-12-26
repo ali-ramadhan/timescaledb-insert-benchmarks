@@ -10,7 +10,6 @@ for method in "${methods[@]}"; do
             --drop-table &&
         poetry run python copy_data.py \
             --benchmarks-file benchmarks_copy_nohypertable.csv \
-            --csv-filepath /mnt/tamriel/climate/csv/weather_hour0.csv \
             --method $method
 
         poetry run python create_table.py \
@@ -18,7 +17,6 @@ for method in "${methods[@]}"; do
             --create-hypertable &&
         poetry run python copy_data.py \
             --benchmarks-file benchmarks_copy_hypertable.csv \
-            --csv-filepath /mnt/tamriel/climate/csv/weather_hour0.csv \
             --method $method
 
         set +x

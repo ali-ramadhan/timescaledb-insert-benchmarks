@@ -1,22 +1,21 @@
+import os
 import argparse
 from pathlib import Path
 
+import dotenv
 from sqlalchemy import text
 
-from write_csv import weather_dataframe
+from write_csv import weather_dataframe, write_csv
 from timer import Timer
-from utils import get_sqlalchemy_engine, get_psycopg3_connection
+from utils import get_sqlalchemy_engine, get_psycopg3_connection, count_lines
+
+dotenv.load_dotenv()
+
+CSV_PATH = os.getenv("CSV_PATH")
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Load data into the weather table using row-by-row inserts."
-    )
-
-    parser.add_argument(
-        "--csv-filepath",
-        type=str,
-        help="Path to CSV file containing data produced by write_csv.py.",
-        required=True
     )
 
     parser.add_argument(
@@ -35,58 +34,110 @@ def parse_args():
     
     return parser.parse_args()
 
-def log_benchmark(args, timer):
+def log_benchmark(args, num_rows, full_timer, copy_timer):
     filepath = args.benchmarks_file
     
     # Create file and write CSV header
     if not Path(filepath).exists():
         with open(filepath, "a") as file:
-            file.write("method,num_rows,seconds,rate,units\n")
+            file.write(
+                "method,num_rows,seconds_full,rate_full,units_full,"
+                "seconds_copy,rate_copy,units_copy\n"
+            )
     
     with open(filepath, "a") as file:
-        file.write(f"{args.method},1038240,{timer.interval},{timer.rate},{timer.units}\n")
+        file.write(
+            f"{args.method},{num_rows},{full_timer.interval},"
+            f"{full_timer.rate},{full_timer.units},{copy_timer.interval},"
+            f"{copy_timer.rate},{copy_timer.units}\n"
+        )
     
     return
 
-def copy_data_using_psycopg3(timer, args):
-    with get_psycopg3_connection() as conn, conn.cursor() as cur, timer:
-        cur.execute(f"""--sql
-            copy weather
-            from '{args.csv_filepath}'
-            delimiter ','
-            csv header;
-        """)
-        conn.commit()
-    return
-
-def copy_data_using_sqlalchemy(timer, args):
-    engine = get_sqlalchemy_engine()
-    with engine.connect() as conn, timer:
-        conn.execute(text(f"""--sql
-            copy weather
-            from '{args.csv_filepath}'
-            delimiter ','
-            csv header;
-        """))
-        conn.commit()
-    return
-
-def main(args):
-    timer = Timer(
-        f"COPYing data using {args.method}",
-        n=1038240,
+def copy_data_using_psycopg3(args):
+    df = weather_dataframe(0)
+    
+    full_timer = Timer(
+        f"COPYing data using psycopg3 cursor (counting overhead)",
+        n=df.shape[0],
         units="inserts"
     )
 
+    copy_timer = Timer(
+        f"COPYing data using psycopg3 cursor",
+        n=df.shape[0],
+        units="inserts"
+    )
+
+    with get_psycopg3_connection() as conn, conn.cursor() as cur, full_timer:
+        with Timer("Constructing data tuples"):
+            data_tuples = []
+            for row in df.itertuples(index=False):
+                data_tuples.append(tuple(row))
+        
+        with cur.copy("""
+            copy weather (
+                time,
+                location_id,
+                latitude,
+                longitude,
+                temperature_2m,
+                zonal_wind_10m,
+                meridional_wind_10m,
+                total_cloud_cover,
+                total_precipitation,
+                snowfall
+            ) from stdin
+            """
+        ) as copy, copy_timer:
+            for row in data_tuples:
+                copy.write_row(row)
+    
+        conn.commit()
+    
+    log_benchmark(args, df.shape[0], full_timer, copy_timer)
+
+    return
+
+def copy_data_using_sqlalchemy(args):
+    df = weather_dataframe(0)
+
+    full_timer = Timer(
+        f"COPYing data using COPY (counting overhead)",
+        n=df.shape[0],
+        units="inserts"
+    )
+
+    copy_timer = Timer(
+        f"COPYing data using COPY",
+        n=df.shape[0],
+        units="inserts"
+    )
+
+    with full_timer:
+        csv_filepath = f"{CSV_PATH}/weather_hour0.csv"
+        write_csv(df, csv_filepath)
+
+        engine = get_sqlalchemy_engine()
+
+        with engine.connect() as conn, copy_timer:
+            conn.execute(text(f"""--sql
+                copy weather
+                from '{csv_filepath}'
+                delimiter ','
+                csv header;
+            """))
+            conn.commit()
+
+    log_benchmark(args, df.shape[0], full_timer, copy_timer)
+
+    return
+
+def main(args):
     if args.method == "psycopg3":
-        copy_data_using_psycopg3(timer, args)
+        copy_data_using_psycopg3(args)
     elif args.method == "sqlalchemy":
-        copy_data_using_sqlalchemy(timer, args)
-    elif args.method == "pandas":
-        copy_data_using_pandas(timer, args)
-
-    log_benchmark(args, timer)
-
+        copy_data_using_sqlalchemy(args)
     return
 
 if __name__ == "__main__":

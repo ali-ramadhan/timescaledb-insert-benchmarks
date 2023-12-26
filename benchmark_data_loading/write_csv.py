@@ -73,9 +73,7 @@ def weather_dataframe(n):
     
     return df
 
-def write_csv(n):
-    df = weather_dataframe(n)
-    filepath = f"{CSV_PATH}/weather_hour{n}.csv"
+def write_csv(df, filepath):
     with Timer(f"Saving {filepath}", n=df.shape[0]):
         df.to_csv(
             filepath,
@@ -83,7 +81,7 @@ def write_csv(n):
             header=False,
             date_format="%Y-%m-%d %H:%M:%S"
         )
-    return
+    return filepath
 
 if __name__ == "__main__":
     # ds = xr.open_dataset("e5.oper.an.sfc.128_167_2t.ll025sc.1995030100_1995033123.nc")
@@ -93,4 +91,4 @@ if __name__ == "__main__":
     #     for n in tqdm(range(len(ds.time)))
     # )
 
-    write_csv(0)
+    write_csv(weather_dataframe(0, f"{CSV_PATH}/weather_hour{n}.csv"))

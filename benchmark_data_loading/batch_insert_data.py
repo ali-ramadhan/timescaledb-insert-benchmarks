@@ -51,7 +51,7 @@ def log_benchmark(args, timer):
 def batch_insert_data_using_psycopg3(df, timer, args):
     with get_psycopg3_connection() as conn, conn.cursor() as cur, timer:
         insert_query = """
-            INSERT INTO weather (
+            insert into weather (
                 time,
                 location_id,
                 latitude,
@@ -62,7 +62,7 @@ def batch_insert_data_using_psycopg3(df, timer, args):
                 total_cloud_cover,
                 total_precipitation,
                 snowfall
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         with Timer("Constructing data tuples"):
             data_tuples = []
@@ -79,7 +79,7 @@ def batch_insert_data_using_sqlalchemy(df, timer, args):
 
     with engine.connect() as conn, timer:
         insert_query = """
-            INSERT INTO weather (
+            insert into weather (
                 time,
                 location_id,
                 latitude,
@@ -90,7 +90,7 @@ def batch_insert_data_using_sqlalchemy(df, timer, args):
                 total_cloud_cover,
                 total_precipitation,
                 snowfall
-            ) VALUES (
+            ) values (
                 :time,
                 :location_id,
                 :latitude,
