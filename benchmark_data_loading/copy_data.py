@@ -15,12 +15,19 @@ CSV_PATH = os.getenv("CSV_PATH")
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Load data into the weather table using row-by-row inserts."
+        description="Load data into the weather table using COPY statements."
+    )
+
+    parser.add_argument(
+        "--hours",
+        type=int,
+        help="How many hours of ERA5 data to load. Each hour is roughly 1 million rows.",
+        required=True
     )
 
     parser.add_argument(
         "--method",
-        choices=["pandas", "psycopg3", "sqlalchemy"],
+        choices=["copy_csv", "psycopg3"],
         help="How to copy data into the table.",
         required=True
     )
@@ -34,28 +41,28 @@ def parse_args():
     
     return parser.parse_args()
 
-def log_benchmark(args, num_rows, full_timer, copy_timer):
+def log_benchmark(args, hour, num_rows, full_timer, copy_timer):
     filepath = args.benchmarks_file
     
     # Create file and write CSV header
     if not Path(filepath).exists():
         with open(filepath, "a") as file:
             file.write(
-                "method,num_rows,seconds_full,rate_full,units_full,"
+                "method,hour,num_rows,seconds_full,rate_full,units_full,"
                 "seconds_copy,rate_copy,units_copy\n"
             )
     
     with open(filepath, "a") as file:
         file.write(
-            f"{args.method},{num_rows},{full_timer.interval},"
+            f"{args.method},{hour},{num_rows},{full_timer.interval},"
             f"{full_timer.rate},{full_timer.units},{copy_timer.interval},"
             f"{copy_timer.rate},{copy_timer.units}\n"
         )
     
     return
 
-def copy_data_using_psycopg3(args):
-    df = weather_dataframe(0)
+def copy_data_using_psycopg3(n, args):
+    df = weather_dataframe(n)
     
     full_timer = Timer(
         f"COPYing data using psycopg3 cursor (counting overhead)",
@@ -95,12 +102,12 @@ def copy_data_using_psycopg3(args):
     
         conn.commit()
     
-    log_benchmark(args, df.shape[0], full_timer, copy_timer)
+    log_benchmark(args, n, df.shape[0], full_timer, copy_timer)
 
     return
 
-def copy_data_using_sqlalchemy(args):
-    df = weather_dataframe(0)
+def copy_data_using_csv(n, args):
+    df = weather_dataframe(n)
 
     full_timer = Timer(
         f"COPYing data using COPY (counting overhead)",
@@ -115,7 +122,7 @@ def copy_data_using_sqlalchemy(args):
     )
 
     with full_timer:
-        csv_filepath = f"{CSV_PATH}/weather_hour0.csv"
+        csv_filepath = f"{CSV_PATH}/weather_hour{n}.csv"
         write_csv(df, csv_filepath)
 
         engine = get_sqlalchemy_engine()
@@ -129,15 +136,18 @@ def copy_data_using_sqlalchemy(args):
             """))
             conn.commit()
 
-    log_benchmark(args, df.shape[0], full_timer, copy_timer)
+    log_benchmark(args, n, df.shape[0], full_timer, copy_timer)
 
     return
 
 def main(args):
-    if args.method == "psycopg3":
-        copy_data_using_psycopg3(args)
-    elif args.method == "sqlalchemy":
-        copy_data_using_sqlalchemy(args)
+    with Timer(f"COPYing {args.hours} hours of data using {args.method}"):
+        if args.method == "psycopg3":
+            for n in range(args.hours):
+                copy_data_using_psycopg3(n, args)
+        elif args.method == "copy_csv":
+            for n in range(args.hours):
+                copy_data_using_csv(n, args)
     return
 
 if __name__ == "__main__":
