@@ -36,3 +36,5 @@ awk 'NR > 1 {print $0",false"}' benchmarks_copy_nohypertable.csv >> "$merged_csv
 awk 'NR > 1 {print $0",true"}' benchmarks_copy_hypertable.csv >> "$merged_csv"
 rm benchmarks_copy_nohypertable.csv
 rm benchmarks_copy_hypertable.csv
+
+poetry run python plot_copy_benchmarks.py --benchmarks-file "$merged_csv"
