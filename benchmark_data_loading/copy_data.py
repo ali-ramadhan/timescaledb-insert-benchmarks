@@ -39,6 +39,13 @@ def parse_args():
         required=True
     )
     
+    parser.add_argument(
+        "--workers",
+        type=int,
+        help="Number of parallel workers.",
+        required=True
+    )
+
     return parser.parse_args()
 
 def log_benchmark(args, hour, num_rows, full_timer, copy_timer):
@@ -48,15 +55,16 @@ def log_benchmark(args, hour, num_rows, full_timer, copy_timer):
     if not Path(filepath).exists():
         with open(filepath, "a") as file:
             file.write(
-                "method,hour,num_rows,seconds_full,rate_full,units_full,"
+                "method,workers,hour,num_rows,"
+                "seconds_full,rate_full,units_full,"
                 "seconds_copy,rate_copy,units_copy\n"
             )
     
     with open(filepath, "a") as file:
         file.write(
-            f"{args.method},{hour},{num_rows},{full_timer.interval},"
-            f"{full_timer.rate},{full_timer.units},{copy_timer.interval},"
-            f"{copy_timer.rate},{copy_timer.units}\n"
+            f"{args.method},{args.workers},{hour},{num_rows},"
+            f"{full_timer.interval},{full_timer.rate},{full_timer.units},"
+            f"{copy_timer.interval},{copy_timer.rate},{copy_timer.units}\n"
         )
     
     return
@@ -141,13 +149,25 @@ def copy_data_using_csv(n, args):
     return
 
 def main(args):
-    with Timer(f"COPYing {args.hours} hours of data using {args.method}"):
+    timer = Timer(
+        f"COPYing {args.hours} hours of data using {args.method}"
+        f"with {args.workers} workers."
+    )
+
+    with timer:
         if args.method == "psycopg3":
-            for n in range(args.hours):
-                copy_data_using_psycopg3(n, args)
+            copy_func = copy_data_using_psycopg3
         elif args.method == "copy_csv":
+            copy_func = copy_data_using_csv
+        
+        if args.workers == 1:
             for n in range(args.hours):
-                copy_data_using_csv(n, args)
+                copy_func(n, args)
+        else:
+            Parallel(n_jobs=args.workers)(
+                delayed(copy_func)(n, args)
+                for n in range(args.hours)
+            )
     return
 
 if __name__ == "__main__":
