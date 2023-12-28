@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 source .env
 
 methods=("pandas" "psycopg3" "sqlalchemy")
