@@ -7,7 +7,7 @@ from sqlalchemy import text
 
 from write_csv import weather_dataframe, write_csv
 from timer import Timer
-from utils import get_sqlalchemy_engine, get_psycopg3_connection, count_lines
+from utils import get_sqlalchemy_engine, get_psycopg3_connection
 
 dotenv.load_dotenv()
 
