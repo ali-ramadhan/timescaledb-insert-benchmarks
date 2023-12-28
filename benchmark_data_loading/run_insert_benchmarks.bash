@@ -1,10 +1,19 @@
 #!/bin/bash
 
+source .env
+
 methods=("pandas" "psycopg3" "sqlalchemy")
+runs=10
 
 for method in "${methods[@]}"; do
-    for i in {1..10}; do
+    for (( i=1; i<=$runs; i++ )); do
         set -x
+
+        docker-compose up --detach
+
+        while ! pg_isready -h "$POSTGRES_HOST" -U "$POSTGRES_USER"; do
+            sleep 2
+        done
 
         poetry run python create_table.py \
             --drop-table &&
@@ -21,7 +30,9 @@ for method in "${methods[@]}"; do
             --num-rows 10000 \
             --method $method
 
-        set +x
+        docker-compose down
+
+        { set +x; } 2>/dev/null
     done
 done
 
