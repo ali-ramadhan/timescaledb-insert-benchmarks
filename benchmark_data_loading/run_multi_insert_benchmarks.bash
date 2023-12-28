@@ -3,36 +3,39 @@
 source .env
 
 methods=("pandas" "psycopg3" "sqlalchemy")
+hypertable_options=("" "--create-hypertable")
 runs=10
 
 for method in "${methods[@]}"; do
     for (( i=1; i<=$runs; i++ )); do
-        set -x
+        for hypertable_option in "${hypertable_options[@]}"; do
+            set -x
 
-        docker-compose up --detach
+            docker-compose up --detach
 
-        while ! pg_isready -h "$POSTGRES_HOST" -U "$POSTGRES_USER"; do
-            sleep 2
+            while ! pg_isready -h "$POSTGRES_HOST" -U "$POSTGRES_USER"; do
+                sleep 2
+            done
+
+            poetry run python create_table.py \
+                --drop-table \
+                $hypertable_option
+            
+            if [ -z "$hypertable_option" ]; then
+                benchmarks_file="benchmarks_multi_insert_nohypertable.csv"
+            else
+                benchmarks_file="benchmarks_multi_insert_hypertable.csv"
+            fi
+
+            poetry run python multi_insert_data.py \
+                --benchmarks-file $benchmarks_file \
+                --num-rows 50000 \
+                --method $method
+
+            docker-compose down
+
+            { set +x; } 2>/dev/null
         done
-
-        poetry run python create_table.py \
-            --drop-table &&
-        poetry run python batch_insert_data.py \
-            --benchmarks-file benchmarks_batch_insert_nohypertable.csv \
-            --num-rows 50000 \
-            --method $method
-
-        poetry run python create_table.py \
-            --drop-table \
-            --create-hypertable &&
-        poetry run python batch_insert_data.py \
-            --benchmarks-file benchmarks_batch_insert_hypertable.csv \
-            --num-rows 50000 \
-            --method $method
-
-        docker-compose down
-
-        { set +x; } 2>/dev/null
     done
 done
 
