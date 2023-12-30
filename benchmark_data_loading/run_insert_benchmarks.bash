@@ -41,7 +41,6 @@ for method in "${methods[@]}"; do
     done
 done
 
-
 merged_csv="benchmarks_insert.csv"
 
 if [ -f "$merged_csv" ]; then
