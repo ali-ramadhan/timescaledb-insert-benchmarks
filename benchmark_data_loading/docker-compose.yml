@@ -2,8 +2,9 @@ version: '3'
 
 services:
   postgres:
-    container_name: timescaledb_weather
-    image: timescale/timescaledb-ha:pg16-ts2.13
+    container_name: ${CONTAINER_NAME}
+    build: .
+    image: ${IMAGE_NAME}:latest
     command: >
       postgres
       -c min_wal_size=4GB
@@ -12,18 +13,3 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
-
-volumes:
-  weather_db:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${WEATHER_DB_PATH}
-
-# Just need this to bypass the VPN on some machines.
-networks:
-  default:
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
