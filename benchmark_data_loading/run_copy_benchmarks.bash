@@ -1,27 +1,48 @@
 #!/bin/bash
 
+set -e
+
+source .env
+
 methods=("psycopg3" "copy_csv")
+hypertable_options=("" "--create-hypertable")
+runs=10
+
+wait_for_db_to_be_ready() {
+    while ! docker exec -it -u postgres "$CONTAINER_NAME" pg_isready -h "$POSTGRES_HOST" -U "$POSTGRES_USER"; do
+        sleep 2
+    done
+}
 
 for method in "${methods[@]}"; do
-    for i in {1..10}; do
-        set -x
+    for (( i=1; i<=$runs; i++ )); do
+        for hypertable_option in "${hypertable_options[@]}"; do
+            set -x
 
-        poetry run python create_table.py \
-            --drop-table &&
-        poetry run python copy_data.py \
-            --hours 1 \
-            --benchmarks-file benchmarks_copy_nohypertable.csv \
-            --method $method
+            docker-compose up --detach
 
-        poetry run python create_table.py \
-            --drop-table \
-            --create-hypertable &&
-        poetry run python copy_data.py \
-            --hours 1 \
-            --benchmarks-file benchmarks_copy_hypertable.csv \
-            --method $method
+            wait_for_db_to_be_ready
 
-        set +x
+            poetry run python create_table.py \
+                --drop-table \
+                $hypertable_option
+
+            if [ -z "$hypertable_option" ]; then
+                benchmarks_file="benchmarks_copy_nohypertable.csv"
+            else
+                benchmarks_file="benchmarks_copy_hypertable.csv"
+            fi
+
+            poetry run python copy_data.py \
+                --hours 1 \
+                --benchmarks-file $benchmarks_file \
+                --method $method \
+                --workers 1
+
+            docker-compose down
+
+            { set +x; } 2>/dev/null
+        done
     done
 done
 
@@ -31,10 +52,8 @@ if [ -f "$merged_csv" ]; then
     rm "$merged_csv"
 fi
 
-echo "method,hour,num_rows,seconds_full,rate_full,units_full,seconds_copy,rate_copy,units_copy,hypertable" > "$merged_csv"
+echo "method,workers,hour,num_rows,seconds_full,rate_full,units_full,seconds_copy,rate_copy,units_copy,hypertable" > "$merged_csv"
 awk 'NR > 1 {print $0",false"}' benchmarks_copy_nohypertable.csv >> "$merged_csv"
 awk 'NR > 1 {print $0",true"}' benchmarks_copy_hypertable.csv >> "$merged_csv"
-rm benchmarks_copy_nohypertable.csv
-rm benchmarks_copy_hypertable.csv
 
 poetry run python plot_copy_benchmarks.py --benchmarks-file "$merged_csv"
