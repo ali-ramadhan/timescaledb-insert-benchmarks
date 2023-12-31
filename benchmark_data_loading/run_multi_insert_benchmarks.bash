@@ -19,7 +19,7 @@ for method in "${methods[@]}"; do
         for hypertable_option in "${hypertable_options[@]}"; do
             set -x
 
-            docker-compose up --build --detach
+            docker-compose up --detach
 
             wait_for_db_to_be_ready
 
@@ -27,10 +27,10 @@ for method in "${methods[@]}"; do
                 --drop-table \
                 $hypertable_option
             
-            if [ -z "$hypertable_option" ]; then
-                benchmarks_file="benchmarks_multi_insert_nohypertable.csv"
-            else
+            if [ "$hypertable_option" ]; then
                 benchmarks_file="benchmarks_multi_insert_hypertable.csv"
+            else
+                benchmarks_file="benchmarks_multi_insert_nohypertable.csv"
             fi
 
             poetry run python multi_insert_data.py \

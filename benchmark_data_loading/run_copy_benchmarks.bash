@@ -27,10 +27,10 @@ for method in "${methods[@]}"; do
                 --drop-table \
                 $hypertable_option
 
-            if [ -z "$hypertable_option" ]; then
-                benchmarks_file="benchmarks_copy_nohypertable.csv"
-            else
+            if [ "$hypertable_option" ]; then
                 benchmarks_file="benchmarks_copy_hypertable.csv"
+            else
+                benchmarks_file="benchmarks_copy_nohypertable.csv"
             fi
 
             poetry run python copy_data.py \

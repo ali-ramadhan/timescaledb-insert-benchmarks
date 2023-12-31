@@ -19,7 +19,7 @@ for method in "${methods[@]}"; do
         for hypertable_option in "${hypertable_options[@]}"; do
             set -x
 
-            docker-compose up --build --detach
+            docker-compose up --detach
 
             wait_for_db_to_be_ready
 
