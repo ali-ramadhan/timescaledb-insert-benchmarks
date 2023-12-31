@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 def parse_args():
@@ -19,64 +20,64 @@ def parse_args():
     
     return parser.parse_args()
 
+def p10(x):
+    return np.percentile(x, 10)
+
+def p90(x):
+    return np.percentile(x, 90)
+
 def main(args):
     df = pd.read_csv(args.benchmarks_file)
 
     pt = pd.pivot_table(df,
         values="rate",
         index=["method", "hypertable"],
-        aggfunc=["mean", "std", "min", "max"]
+        aggfunc=["median", p10, p90]
     )
 
-    fig, ax = plt.subplots()
-
     methods = pt.index.get_level_values("method").unique()
+
+    def get(var, agg, hypertable):
+        return pt[agg][var].xs(hypertable, level="hypertable").reindex(methods)
+
+    def ranges(var, hypertable):
+        return [
+            get(var, "median", hypertable) - get(var, "p10", hypertable),
+            get(var, "p90", hypertable) - get(var, "median", hypertable)            
+        ]
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
     x = np.arange(len(methods))
     width = 0.35  # the width of the bars
 
-    mean_rates_nht = pt["mean"]["rate"].xs(False, level="hypertable").reindex(methods)
-    min_rates_nht = pt["min"]["rate"].xs(False, level="hypertable").reindex(methods)
-    max_rates_nht = pt["max"]["rate"].xs(False, level="hypertable").reindex(methods)
-
-    mean_rates_ht = pt["mean"]["rate"].xs(True, level="hypertable").reindex(methods)
-    min_rates_ht = pt["min"]["rate"].xs(True, level="hypertable").reindex(methods)
-    max_rates_ht = pt["max"]["rate"].xs(True, level="hypertable").reindex(methods)
-
-    range_no_hypertable = [
-        mean_rates_nht - min_rates_nht,
-        max_rates_nht - mean_rates_nht
-    ]
-
-    range_hypertable = [
-        mean_rates_ht - min_rates_ht,
-        max_rates_ht - mean_rates_ht
-    ]
-
     ax.bar(
         x - width/2,
-        mean_rates_nht,
+        get("rate", "median", False),
         width,
-        yerr=range_no_hypertable,
+        yerr=ranges("rate", False),
         capsize=5,
-        label="No Hypertable"
+        label="Regular table"
     )
 
     ax.bar(
         x + width/2,
-        mean_rates_ht,
+        get("rate", "median", True),
         width,
-        yerr=range_hypertable,
+        yerr=ranges("rate", True),
         capsize=5,
         label="Hypertable"
     )
 
-    ax.set_ylabel("Inserts per second")
+    ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter("{x:,.0f}"))
+
+    ax.set_ylabel("Insert rate (rows per second)")
     ax.set_xticks(x)
     ax.set_xticklabels(methods)
     ax.legend(frameon=False)
 
     output_filename = Path(args.benchmarks_file).with_suffix(".png")
-    plt.savefig(output_filename, dpi=100, transparent=False)
+    plt.savefig(output_filename, dpi=200, transparent=False)
 
 if __name__ == "__main__":
     main(parse_args())
