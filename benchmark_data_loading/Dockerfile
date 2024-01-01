@@ -11,4 +11,4 @@ RUN wget https://github.com/ossc-db/pg_bulkload/releases/download/VERSION3_1_20/
 RUN tar xvf pg_bulkload-3.1.20.tar.gz
 RUN cd pg_bulkload-3.1.20 && make && make install
 
-CMD psql -U postgres -d postgres -c "CREATE EXTENSION pg_bulkload;"
+ENV PATH="${PATH}:/home/postgres/pg_bulkload-3.1.20/bin"
