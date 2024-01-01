@@ -150,7 +150,7 @@ def copy_data_using_csv(n, args):
 
 def main(args):
     timer = Timer(
-        f"COPYing {args.hours} hours of data using {args.method}"
+        f"COPYing {args.hours} hours of data using {args.method} "
         f"with {args.workers} workers."
     )
 
