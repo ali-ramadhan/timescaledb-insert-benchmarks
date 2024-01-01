@@ -9,7 +9,14 @@ from utils import get_sqlalchemy_engine, get_psycopg3_connection
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Load data into the weather table using batched inserts."
+        description="Load data into the weather table using multi-valued inserts."
+    )
+
+    parser.add_argument(
+        "--method",
+        choices=["pandas", "psycopg3", "sqlalchemy"],
+        help="How to insert rows into the table.",
+        required=True
     )
 
     parser.add_argument(
@@ -20,9 +27,9 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--method",
-        choices=["pandas", "psycopg3", "sqlalchemy"],
-        help="How to insert rows into the table.",
+        "--table-type",
+        choices=["regular", "hyper"],
+        help="Create a regular PostgreSQL table or a TimescaleDB hypertable.",
         required=True
     )
 
@@ -41,10 +48,13 @@ def log_benchmark(args, timer):
     # Create file and write CSV header
     if not Path(filepath).exists():
         with open(filepath, "a") as file:
-            file.write("method,num_rows,seconds,rate,units\n")
+            file.write("method,table_type,num_rows,seconds,rate,units\n")
     
     with open(filepath, "a") as file:
-        file.write(f"{args.method},{args.num_rows},{timer.interval},{timer.rate},{timer.units}\n")
+        file.write(
+            f"{args.method},{args.table_type},{args.num_rows},"
+            f"{timer.interval},{timer.rate},{timer.units}\n"
+        )
     
     return
 

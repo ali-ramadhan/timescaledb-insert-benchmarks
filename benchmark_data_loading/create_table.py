@@ -17,10 +17,10 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--create-hypertable",
-        action="store_true",
-        default=False,
-        help="Convert the table into a TimescaleDB hypertable."
+        "--table-type",
+        choices=["regular", "hyper"],
+        help="Create a regular PostgreSQL table or a TimescaleDB hypertable.",
+        required=True
     )
 
     parser.add_argument(
@@ -58,7 +58,7 @@ def main(args):
 
         conn.execute(text(table_creation_query))
 
-        if args.create_hypertable:
+        if args.table_type == "hyper":
             conn.execute(text("select create_hypertable('weather', 'time');"))
 
         conn.commit()

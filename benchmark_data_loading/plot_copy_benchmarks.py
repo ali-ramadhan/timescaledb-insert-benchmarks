@@ -31,19 +31,19 @@ def main(args):
 
     pt = pd.pivot_table(df,
         values=["rate_copy", "rate_full"],
-        index=["method", "hypertable"],
+        index=["method", "table_type"],
         aggfunc=["median", p10, p90]
     )
 
     methods = pt.index.get_level_values("method").unique()
 
-    def get(var, agg, hypertable):
-        return pt[agg][var].xs(hypertable, level="hypertable").reindex(methods)
+    def get(var, agg, table_type):
+        return pt[agg][var].xs(table_type, level="table_type").reindex(methods)
 
-    def ranges(var, hypertable):
+    def ranges(var, table_type):
         return [
-            get(var, "median", hypertable) - get(var, "p10", hypertable),
-            get(var, "p90", hypertable) - get(var, "median", hypertable)            
+            get(var, "median", table_type) - get(var, "p10", table_type),
+            get(var, "p90", table_type) - get(var, "median", table_type)            
         ]
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -53,36 +53,36 @@ def main(args):
 
     ax.bar(
         x - 1.5*width,
-        get("rate_copy", "median", False),
+        get("rate_copy", "median", "regular"),
         width,
-        yerr=ranges("rate_copy", False),
+        yerr=ranges("rate_copy", "regular"),
         capsize=5,
         label="Copy rate (regular table)"
     )
 
     ax.bar(
         x - 0.5*width,
-        get("rate_copy", "median", True),
+        get("rate_copy", "median", "hyper"),
         width,
-        yerr=ranges("rate_copy", True),
+        yerr=ranges("rate_copy", "hyper"),
         capsize=5,
         label="Copy rate (hypertable)"
     )
 
     ax.bar(
         x + 0.5*width,
-        get("rate_full", "median", False),
+        get("rate_full", "median", "regular"),
         width,
-        yerr=ranges("rate_full", False),
+        yerr=ranges("rate_full", "regular"),
         capsize=5,
         label="Full rate (regular table)"
     )
 
     ax.bar(
         x + 1.5*width,
-        get("rate_full", "median", True),
+        get("rate_full", "median", "hyper"),
         width,
-        yerr=ranges("rate_full", True),
+        yerr=ranges("rate_full", "hyper"),
         capsize=5,
         label="Full rate (hypertable)"
     )

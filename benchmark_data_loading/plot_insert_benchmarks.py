@@ -31,19 +31,19 @@ def main(args):
 
     pt = pd.pivot_table(df,
         values="rate",
-        index=["method", "hypertable"],
+        index=["method", "table_type"],
         aggfunc=["median", p10, p90]
     )
 
     methods = pt.index.get_level_values("method").unique()
 
-    def get(var, agg, hypertable):
-        return pt[agg][var].xs(hypertable, level="hypertable").reindex(methods)
+    def get(var, agg, table_type):
+        return pt[agg][var].xs(table_type, level="table_type").reindex(methods)
 
-    def ranges(var, hypertable):
+    def ranges(var, table_type):
         return [
-            get(var, "median", hypertable) - get(var, "p10", hypertable),
-            get(var, "p90", hypertable) - get(var, "median", hypertable)            
+            get(var, "median", table_type) - get(var, "p10", table_type),
+            get(var, "p90", table_type) - get(var, "median", table_type)            
         ]
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -53,18 +53,18 @@ def main(args):
 
     ax.bar(
         x - width/2,
-        get("rate", "median", False),
+        get("rate", "median", "regular"),
         width,
-        yerr=ranges("rate", False),
+        yerr=ranges("rate", "regular"),
         capsize=5,
         label="Regular table"
     )
 
     ax.bar(
         x + width/2,
-        get("rate", "median", True),
+        get("rate", "median", "hyper"),
         width,
-        yerr=ranges("rate", True),
+        yerr=ranges("rate", "hyper"),
         capsize=5,
         label="Hypertable"
     )

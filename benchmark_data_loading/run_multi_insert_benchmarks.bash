@@ -5,7 +5,7 @@ set -e
 source .env
 
 methods=("pandas" "psycopg3" "sqlalchemy")
-hypertable_options=("" "--create-hypertable")
+table_types=("regular" "hyper")
 runs=10
 
 wait_for_db_to_be_ready() {
@@ -14,9 +14,9 @@ wait_for_db_to_be_ready() {
     done
 }
 
-for method in "${methods[@]}"; do
-    for (( i=1; i<=$runs; i++ )); do
-        for hypertable_option in "${hypertable_options[@]}"; do
+for (( i=1; i<=$runs; i++ )); do
+    for method in "${methods[@]}"; do
+        for table_type in "${table_types[@]}"; do
             set -x
 
             docker-compose up --detach
@@ -25,18 +25,13 @@ for method in "${methods[@]}"; do
 
             poetry run python create_table.py \
                 --drop-table \
-                $hypertable_option
-            
-            if [ "$hypertable_option" ]; then
-                benchmarks_file="benchmarks_multi_insert_hypertable.csv"
-            else
-                benchmarks_file="benchmarks_multi_insert_nohypertable.csv"
-            fi
+                --table-type $table_type
 
             poetry run python multi_insert_data.py \
-                --benchmarks-file $benchmarks_file \
+                --method $method \
+                --table-type $table_type \
                 --num-rows 100000 \
-                --method $method
+                --benchmarks-file "benchmarks_multi_insert.csv"
 
             docker-compose down
 
@@ -45,14 +40,4 @@ for method in "${methods[@]}"; do
     done
 done
 
-merged_csv="benchmarks_multi_insert.csv"
-
-if [ -f "$merged_csv" ]; then
-    rm "$merged_csv"
-fi
-
-echo "method,num_rows,seconds,rate,units,hypertable" > "$merged_csv"
-awk 'NR > 1 {print $0",false"}' benchmarks_multi_insert_nohypertable.csv >> "$merged_csv"
-awk 'NR > 1 {print $0",true"}' benchmarks_multi_insert_hypertable.csv >> "$merged_csv"
-
-poetry run python plot_insert_benchmarks.py --benchmarks-file "$merged_csv"
+poetry run python plot_insert_benchmarks.py --benchmarks-file "benchmarks_multi_insert.csv"

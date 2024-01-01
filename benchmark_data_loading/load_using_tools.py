@@ -21,13 +21,6 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--hours",
-        type=int,
-        help="How many hours of ERA5 data to load. Each hour is roughly 1 million rows.",
-        required=True
-    )
-
-    parser.add_argument(
         "--method",
         choices=["pg_bulkload", "timescaledb_parallel_copy"],
         help="How to copy data into the table.",
@@ -35,9 +28,16 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--benchmarks-file",
-        type=str,
-        help="Filepath to output benchmarks to a CSV file.",
+        "--table-type",
+        choices=["regular", "hyper"],
+        help="Create a regular PostgreSQL table or a TimescaleDB hypertable.",
+        required=True
+    )
+
+    parser.add_argument(
+        "--hours",
+        type=int,
+        help="How many hours of ERA5 data to load. Each hour is roughly 1 million rows.",
         required=True
     )
     
@@ -45,6 +45,13 @@ def parse_args():
         "--workers",
         type=int,
         help="Number of parallel workers.",
+        required=True
+    )
+
+    parser.add_argument(
+        "--benchmarks-file",
+        type=str,
+        help="Filepath to output benchmarks to a CSV file.",
         required=True
     )
 
@@ -57,13 +64,13 @@ def log_benchmark(args, timer, hour):
     if not Path(filepath).exists():
         with open(filepath, "a") as file:
             file.write(
-                "method,workers,hour,num_rows,"
+                "method,table_type,workers,hour,num_rows,"
                 "seconds,rate,units\n"
             )
     
     with open(filepath, "a") as file:
         file.write(
-            f"{args.method},{args.workers},{hour},{num_rows(1)},"
+            f"{args.method},{args.table_type},{args.workers},{hour},{num_rows(1)},"
             f"{timer.interval},{timer.rate},{timer.units}\n"
         )
     
