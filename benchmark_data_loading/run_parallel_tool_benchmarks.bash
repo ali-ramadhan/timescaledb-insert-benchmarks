@@ -4,7 +4,7 @@ set -e
 
 source .env
 
-methods=("psycopg3" "copy_csv")
+methods=("pg_bulkload" "timescaledb_parallel_copy")
 table_types=("regular" "hyper")
 num_workers=(1 2 4 8 12 16 24 32 42)
 
@@ -27,13 +27,13 @@ for method in "${methods[@]}"; do
                 --drop-table \
                 --table-type $table_type
 
-            poetry run python copy_data.py \
+            poetry run python load_using_tools.py \
                 --method $method \
                 --table-type $table_type \
                 --hours 128 \
                 --workers $workers \
-                --benchmarks-file "benchmarks_parallel_copy_workers.csv" \
-                --parallel-benchmarks-file "benchmarks_parallel_copy.csv"
+                --benchmarks-file "benchmarks_parallel_tools_workers.csv" \
+                --parallel-benchmarks-file "benchmarks_parallel_tools.csv"
 
             docker-compose down
 

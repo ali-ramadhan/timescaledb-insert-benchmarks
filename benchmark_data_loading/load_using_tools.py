@@ -3,8 +3,8 @@ import argparse
 from pathlib import Path
 
 import dotenv
+from joblib import Parallel, delayed
 
-from write_csv import weather_dataframe, write_csv
 from timer import Timer
 from utils import sqlalchemy_connection_string, run_in_container, num_rows
 
@@ -55,6 +55,12 @@ def parse_args():
         required=True
     )
 
+    parser.add_argument(
+        "--parallel-benchmarks-file",
+        type=str,
+        help="Filepath to output parallel benchmarks to a CSV file."
+    )
+
     return parser.parse_args()
 
 def log_benchmark(args, timer, hour):
@@ -76,7 +82,50 @@ def log_benchmark(args, timer, hour):
     
     return
 
-def load_data_using_pg_bulkload(args, timer):
+def log_parallel_benchmark(args, timer):
+    filepath = args.parallel_benchmarks_file
+    
+    # Create file and write CSV header
+    if not Path(filepath).exists():
+        with open(filepath, "a") as file:
+            file.write(
+                "method,table_type,workers,hours,num_rows,"
+                "seconds,rate,units\n"
+            )
+    
+    with open(filepath, "a") as file:
+        file.write(
+            f"{args.method},{args.table_type},{args.workers},{args.hours},{num_rows(args.hours)},"
+            f"{timer.interval},{timer.rate},{timer.units}\n"
+        )
+    
+    return
+
+def _pg_bulkload(args, n):
+    timer = Timer(
+        f"COPYing hour {n} using {args.method} with {args.workers} workers",
+        n=num_rows(1),
+        units="inserts"
+    )
+
+    cmd = [
+        "pg_bulkload",
+        f"--host={POSTGRES_HOST}",
+        f"--username={POSTGRES_USER}",
+        f"--dbname={POSTGRES_DB_NAME}",
+        f"--input", f"{CSV_PATH}/weather_hour{n}.csv",
+        "--output", "weather",
+        "-o", "writer=parallel"
+    ]
+
+    with timer:
+        run_in_container(cmd)
+    
+    log_benchmark(args, timer, n)
+
+    return
+
+def load_data_using_pg_bulkload(args):
     run_in_container([
         "psql",
         "-U", POSTGRES_USER,
@@ -84,31 +133,14 @@ def load_data_using_pg_bulkload(args, timer):
         "-c", "CREATE EXTENSION if not exists pg_bulkload;"
     ])
 
-    for n in range(args.hours):
-        timer = Timer(
-            f"COPYing hour {n} using {args.method} with {args.workers} workers",
-            n=num_rows(1),
-            units="inserts"
-        )
-
-        cmd = [
-            "pg_bulkload",
-            f"--host={POSTGRES_HOST}",
-            f"--username={POSTGRES_USER}",
-            f"--dbname={POSTGRES_DB_NAME}",
-            f"--input", f"{CSV_PATH}/weather_hour{n}.csv",
-            "--output", "weather",
-            "-o", "writer=parallel"
-        ]
-
-        with timer:
-            run_in_container(cmd)
-        
-        log_benchmark(args, timer, n)
+    Parallel(n_jobs=args.workers)(
+        delayed(_pg_bulkload)(args, n)
+        for n in range(args.hours)
+    )
 
     return
 
-def load_data_using_tpc(args, timer):
+def load_data_using_tpc(args):
     for n in range(args.hours):
         timer = Timer(
             f"COPYing hour {n} using {args.method} with {args.workers} workers",
@@ -142,10 +174,14 @@ def main(args):
         units="inserts"
     )
 
-    if args.method == "pg_bulkload":
-        load_data_using_pg_bulkload(args, timer)
-    elif args.method == "timescaledb_parallel_copy":
-        load_data_using_tpc(args, timer)
+    with timer:
+        if args.method == "pg_bulkload":
+            load_data_using_pg_bulkload(args)
+        elif args.method == "timescaledb_parallel_copy":
+            load_data_using_tpc(args)
+
+    if args.parallel_benchmarks_file:
+        log_parallel_benchmark(args, timer)
 
     return
 

@@ -29,8 +29,9 @@ for method in "${methods[@]}"; do
             --method $method \
             --table-type $table_type \
             --hours 744 \
-            --workers 1 \
-            --benchmarks-file "benchmarks_copy_at_scale.csv"
+            --workers 16 \
+            --benchmarks-file "benchmarks_copy_at_scale_workers.csv" \
+            --parallel-benchmarks-file "benchmarks_copy_at_scale.csv"
 
         docker-compose down
 

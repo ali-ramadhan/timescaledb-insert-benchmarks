@@ -55,10 +55,9 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--parallel-benchmark",
-        action="store_true",
-        default=False,
-        help="Use when running a parallel benchmark (output csv will be different)."
+        "--parallel-benchmarks-file",
+        type=str,
+        help="Filepath to output parallel benchmarks to a CSV file."
     )
 
     return parser.parse_args()
@@ -85,7 +84,7 @@ def log_benchmark(args, hour, num_rows, full_timer, copy_timer):
     return
 
 def log_parallel_benchmark(args, timer):
-    filepath = args.benchmarks_file
+    filepath = args.parallel_benchmarks_file
     
     # Create file and write CSV header
     if not Path(filepath).exists():
@@ -144,8 +143,7 @@ def copy_data_using_psycopg3(n, args):
     
         conn.commit()
     
-    if not args.parallel_benchmark:
-        log_benchmark(args, n, df.shape[0], full_timer, copy_timer)
+    log_benchmark(args, n, df.shape[0], full_timer, copy_timer)
 
     return
 
@@ -179,12 +177,13 @@ def copy_data_using_csv(n, args):
             """))
             conn.commit()
 
-    if not args.parallel_benchmark:
-        log_benchmark(args, n, df.shape[0], full_timer, copy_timer)
+    log_benchmark(args, n, df.shape[0], full_timer, copy_timer)
 
     return
 
 def main(args):
+    print(args.parallel_benchmarks_file)
+    
     if args.method == "psycopg3":
         copy_func = copy_data_using_psycopg3
     elif args.method == "copy_csv":
@@ -197,16 +196,17 @@ def main(args):
         units="inserts"
     )
 
-    if not args.parallel_benchmark:
-        with timer:
+    with timer:
+        if args.workers == 1:
             for n in range(args.hours):
                 copy_func(n, args)
-    else:
-        with timer:
+        else:
             Parallel(n_jobs=args.workers)(
                 delayed(copy_func)(n, args)
                 for n in range(args.hours)
             )
+    
+    if args.parallel_benchmarks_file:
         log_parallel_benchmark(args, timer)      
 
     return
