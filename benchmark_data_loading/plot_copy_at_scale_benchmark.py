@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def main(args):
+def main():
     df = pd.read_csv("benchmarks_copy_at_scale.csv")
 
     def plot(method, rate, table_type, label):
@@ -24,4 +24,4 @@ def main(args):
     plt.savefig("benchmarks_copy_at_scale.png", dpi=200, transparent=False)
 
 if __name__ == "__main__":
-    main(None)
+    main()

@@ -4,9 +4,9 @@ set -e
 
 source .env
 
-methods=("pg_bulkload" "timescaledb_parallel_copy")
+methods=("psycopg3" "copy_csv")
 table_types=("regular" "hyper")
-runs=10
+num_workers=(1 2 4 8 12 16 24 32 42)
 
 wait_for_db_to_be_ready() {
     while ! docker exec -it -u postgres "$CONTAINER_NAME" pg_isready -h "$POSTGRES_HOST" -U "$POSTGRES_USER"; do
@@ -14,9 +14,9 @@ wait_for_db_to_be_ready() {
     done
 }
 
-for (( i=1; i<=$runs; i++ )); do
-    for method in "${methods[@]}"; do
-        for table_type in "${table_types[@]}"; do
+for method in "${methods[@]}"; do
+    for table_type in "${table_types[@]}"; do
+        for workers in "${num_workers[@]}"; do
             set -x
 
             docker-compose up --detach
@@ -27,12 +27,13 @@ for (( i=1; i<=$runs; i++ )); do
                 --drop-table \
                 --table-type $table_type
 
-            poetry run python load_using_tools.py \
+            poetry run python copy_data.py \
+                --parallel-benchmark \
                 --method $method \
                 --table-type $table_type \
-                --hours 1 \
-                --workers 1 \
-                --benchmarks-file "benchmarks_tools.csv"
+                --hours 128 \
+                --workers $workers \
+                --benchmarks-file "benchmarks_parallel_copy.csv"
 
             docker-compose down
 
@@ -40,5 +41,3 @@ for (( i=1; i<=$runs; i++ )); do
         done
     done
 done
-
-poetry run python plot_insert_benchmarks.py --benchmarks-file "benchmarks_tools.csv"
