@@ -181,9 +181,7 @@ def copy_data_using_csv(n, args):
 
     return
 
-def main(args):
-    print(args.parallel_benchmarks_file)
-    
+def main(args):    
     if args.method == "psycopg3":
         copy_func = copy_data_using_psycopg3
     elif args.method == "copy_csv":

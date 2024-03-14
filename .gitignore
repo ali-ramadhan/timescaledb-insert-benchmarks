@@ -9,10 +9,15 @@
 # Plots
 *.png
 
+# Temporary/backup files
+*.backup
+
 # Geonames
 cities500.txt
 
-## GitHub's Python .gitignore
+##############################
+# GitHub's Python .gitignore #
+##############################
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
