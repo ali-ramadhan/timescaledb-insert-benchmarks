@@ -20,34 +20,79 @@ def parse_args():
     
     return parser.parse_args()
 
+def get_label(table_type, num_workers):
+    label = ""
+
+    if table_type == "regular":
+        label += "regular table"
+    elif table_type == "hyper":
+        label += "hypertable"
+    
+    if num_workers == 1:
+        label += " (1 worker)"
+    else:
+        label += f" ({num_workers} workers)"
+    
+    return label
+
+def get_linestyle(table_type):
+    if table_type == "regular":
+        return "solid"
+    elif table_type == "hyper":
+        return "dashed"
+
+def get_color(num_workers):
+    if num_workers == 1:
+        return "darkblue"
+    elif num_workers == 2:
+        return "dodgerblue"
+    elif num_workers == 4:
+        return "aqua"
+    elif num_workers == 8:
+        return "forestgreen"
+    elif num_workers == 16:
+        return "darkorange"
+    elif num_workers == 32:
+        return "orangered"
+
+def plot(df, ax, table_type, num_workers, rate):
+    dfq = df.query(f"table_type == '{table_type}' and num_workers == {num_workers}").sort_values(by="total_rows")
+    rows_inserted = dfq["total_rows"] / 1e6
+    insert_rate = dfq[rate]
+    ax.plot(
+        rows_inserted,
+        insert_rate,
+        color=get_color(num_workers),
+        linestyle=get_linestyle(table_type),
+        label=get_label(table_type, num_workers)
+    )
+
 def main(args):
     df = pd.read_csv(args.benchmarks_file)
-
-    def plot(ax, table_type, num_workers, rate, label):
-        dfq = df.query(f"table_type == '{table_type}' and num_workers == {num_workers}").sort_values(by="total_rows")
-        rows_inserted = dfq["total_rows"] / 1e6
-        insert_rate = dfq[rate]
-        ax.plot(rows_inserted, insert_rate, label=label)
 
     fig, ax = plt.subplots(figsize=(8, 6))
 
     for table_type in ["regular", "hyper"]:
         for n in [1, 2, 4, 8, 16, 32]:
-            plot(ax, table_type, n, "overall_rate", label=f"{table_type} table ({n} workers)")
+            plot(df, ax, table_type, n, "overall_rate")
 
-    # plot(ax, "regular", 1, "overall_rate", label="regular table (1 worker)")
-    # plot(ax, "regular", 32, "overall_rate", label="regular table (32 workers)")
-    # plot(ax, "hyper", 1, "overall_rate", label="hypertable (1 worker)")
-    # plot(ax, "hyper", 32, "overall_rate", label="hypertable (32 workers)")
-
-    ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter("{x:,.0f}"))
-
+    ax.set_yscale("log")
     ax.set_xlabel("Rows inserted (millions)")
     ax.set_ylabel("Insert rate (rows per second)")
-    ax.legend(frameon=False, ncol=2, loc="upper center", bbox_to_anchor=(0.5, 1.15))
+
+    def to_kM(val, pos):
+        if 1e3 <= val < 1e6:
+            return f"{val/1e3:.0f}k"
+        elif 1e6 <= val < 1e9:
+            return f"{val/1e6:.0f}M"
+
+    ax.set_yticks([100_000, 200_000, 500_000, 1_000_000, 2_000_000])
+    ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(to_kM))
+
+    ax.legend(frameon=False, ncol=2, loc="upper center", bbox_to_anchor=(0.5, 1.3))
     
     output_filename = Path(args.benchmarks_file).with_suffix(".png")
-    plt.savefig(output_filename, dpi=200, transparent=False)
+    plt.savefig(output_filename, dpi=200, transparent=False, bbox_inches="tight")
 
 if __name__ == "__main__":
     main(parse_args())
