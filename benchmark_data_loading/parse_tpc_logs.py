@@ -22,9 +22,8 @@ def parse_filename(filename):
         return match.group(1), match.group(2)
     raise ValueError(f"Invalid filename: {filename}")
 
-def parse_log_file(log_filepath):
+def parse_log_file(log_filepath, output_csv_path=Path("benchmarks_parallel_tpc.csv")):
     table_type, num_workers = parse_filename(log_filepath)
-    output_csv_path = Path("benchmarks_parallel_tpc.csv")
 
     with open(output_csv_path, mode="a", newline="") as csv_file:
         csv_writer = csv.writer(csv_file)
@@ -79,5 +78,7 @@ def parse_log_file(log_filepath):
                     ])
 
 if __name__ == "__main__":
-    parse_log_file("tpc_regular_1workers.log")
+    for table_type in ["regular", "hyper"]:
+        for n in [1, 2, 4, 8, 16, 32]:
+            parse_log_file(f"tpc_{table_type}_{n}workers.log")
 
