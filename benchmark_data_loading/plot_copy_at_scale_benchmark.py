@@ -20,6 +20,14 @@ def parse_args():
     
     return parser.parse_args()
 
+def num_to_kM(val, pos):
+    if val < 1e3:
+        return f"{val:.0f}"
+    if 1e3 <= val < 1e6:
+        return f"{val/1e3:.0f}k"
+    elif 1e6 <= val < 1e9:
+        return f"{val/1e6:.0f}M"
+
 def main(args):
     df = pd.read_csv(args.benchmarks_file)
 
@@ -36,17 +44,17 @@ def main(args):
 
     plot(ax, "psycopg3", "rate_full", "regular", label="psycopg3 (regular table)")
     plot(ax, "psycopg3", "rate_full", "hyper", label="psycopg3 (hypertable)")
-    plot(ax, "copy_csv", "rate_full", "regular", label="COPY CSV (regular table)")
-    plot(ax, "copy_csv", "rate_full", "hyper", label="COPY CSV (hypertable)")
+    plot(ax, "copy_csv", "rate_full", "regular", label="copy_csv (regular table)")
+    plot(ax, "copy_csv", "rate_full", "hyper", label="copy_csv (hypertable)")
 
-    ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter("{x:,.0f}"))
+    ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(num_to_kM))
 
     ax.set_xlabel("Rows inserted (millions)")
     ax.set_ylabel("Insert rate (rows per second)")
     ax.legend(frameon=False, ncol=2, loc="upper center", bbox_to_anchor=(0.5, 1.15))
     
     output_filename = Path(args.benchmarks_file).with_suffix(".png")
-    plt.savefig(output_filename, dpi=200, transparent=False)
+    fig.savefig(output_filename, dpi=200, transparent=False, bbox_inches="tight")
 
 if __name__ == "__main__":
     main(parse_args())

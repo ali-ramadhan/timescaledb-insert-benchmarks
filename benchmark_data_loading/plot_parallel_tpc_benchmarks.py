@@ -67,6 +67,14 @@ def plot(df, ax, table_type, num_workers, rate):
         label=get_label(table_type, num_workers)
     )
 
+def num_to_kM(val, pos):
+    if val < 1e3:
+        return f"{val:.0f}"
+    if 1e3 <= val < 1e6:
+        return f"{val/1e3:.0f}k"
+    elif 1e6 <= val < 1e9:
+        return f"{val/1e6:.0f}M"
+
 def main(args):
     df = pd.read_csv(args.benchmarks_file)
 
@@ -80,19 +88,13 @@ def main(args):
     ax.set_xlabel("Rows inserted (millions)")
     ax.set_ylabel("Insert rate (rows per second)")
 
-    def to_kM(val, pos):
-        if 1e3 <= val < 1e6:
-            return f"{val/1e3:.0f}k"
-        elif 1e6 <= val < 1e9:
-            return f"{val/1e6:.0f}M"
-
     ax.set_yticks([100_000, 200_000, 500_000, 1_000_000, 2_000_000])
-    ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(to_kM))
+    ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(num_to_kM))
 
     ax.legend(frameon=False, ncol=2, loc="upper center", bbox_to_anchor=(0.5, 1.3))
     
     output_filename = Path(args.benchmarks_file).with_suffix(".png")
-    plt.savefig(output_filename, dpi=200, transparent=False, bbox_inches="tight")
+    fig.savefig(output_filename, dpi=200, transparent=False, bbox_inches="tight")
 
 if __name__ == "__main__":
     main(parse_args())

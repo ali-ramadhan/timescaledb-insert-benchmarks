@@ -26,6 +26,14 @@ def p10(x):
 def p90(x):
     return np.percentile(x, 90)
 
+def num_to_kM(val, pos):
+    if val < 1e3:
+        return f"{val:.0f}"
+    if 1e3 <= val < 1e6:
+        return f"{val/1e3:.0f}k"
+    elif 1e6 <= val < 1e9:
+        return f"{val/1e6:.0f}M"
+
 def main(args):
     df = pd.read_csv(args.benchmarks_file)
 
@@ -69,7 +77,7 @@ def main(args):
         label="Hypertable"
     )
 
-    ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter("{x:,.0f}"))
+    ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(num_to_kM))
 
     ax.set_ylabel("Insert rate (rows per second)")
     ax.set_xticks(x)
@@ -77,7 +85,7 @@ def main(args):
     ax.legend(frameon=False)
 
     output_filename = Path(args.benchmarks_file).with_suffix(".png")
-    plt.savefig(output_filename, dpi=200, transparent=False)
+    fig.savefig(output_filename, dpi=200, transparent=False, bbox_inches="tight")
 
 if __name__ == "__main__":
     main(parse_args())

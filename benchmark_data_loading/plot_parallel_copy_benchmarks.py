@@ -3,6 +3,14 @@ import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+def num_to_kM(val, pos):
+    if val < 1e3:
+        return f"{val:.0f}"
+    if 1e3 <= val < 1e6:
+        return f"{val/1e3:.0f}k"
+    elif 1e6 <= val < 1e9:
+        return f"{val/1e6:.0f}M"
+
 def main():
     df = pd.read_csv("benchmarks_parallel_copy.csv")
 
@@ -21,13 +29,13 @@ def main():
     def to_k(val, pos):
         return f"{val/1000:.0f}k"
 
-    ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(to_k))
+    ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(num_to_kM))
 
     ax.set_xlabel("Workers")
     ax.set_ylabel("Insert rate (rows per second)")
     ax.legend(frameon=False, ncol=2, loc="upper center", bbox_to_anchor=(0.5, 1.15))
     
-    fig.savefig("benchmarks_parallel_copy.png", dpi=200, transparent=False)
+    fig.savefig("benchmarks_parallel_copy.png", dpi=200, transparent=False, bbox_inches="tight")
 
 if __name__ == "__main__":
     main()
