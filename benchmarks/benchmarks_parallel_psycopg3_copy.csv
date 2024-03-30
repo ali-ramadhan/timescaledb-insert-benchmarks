@@ -1,0 +1,2 @@
+method,table_type,workers,hours,num_rows,seconds,rate,units
+psycopg3,regular,16,744,772450560,2380.1215986879542,324542.47733637417,inserts

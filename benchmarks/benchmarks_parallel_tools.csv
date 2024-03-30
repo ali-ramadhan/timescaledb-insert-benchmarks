@@ -1,0 +1,4 @@
+method,table_type,workers,hours,num_rows,seconds,rate,units
+timescaledb_parallel_copy,regular,1,128,132894720,543.335012383759,244590.75334930947,inserts
+timescaledb_parallel_copy,regular,2,128,132894720,447.32939632609487,297084.70109825337,inserts
+timescaledb_parallel_copy,regular,4,128,132894720,294.2263810620643,451675.06571060023,inserts

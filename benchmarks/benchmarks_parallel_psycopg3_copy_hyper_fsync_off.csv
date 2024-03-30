@@ -1,0 +1,3 @@
+method,table_type,workers,hours,num_rows,seconds,rate,units
+psycopg3,hyper,16,744,772450560,1851.6682276781648,417164.66721934715,inserts
+psycopg3,hyper,32,744,772450560,1671.5481266258284,462116.85305122595,inserts
