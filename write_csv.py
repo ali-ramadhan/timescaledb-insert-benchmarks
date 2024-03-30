@@ -1,5 +1,4 @@
 import os
-import logging
 
 import dotenv
 import xarray as xr
@@ -11,8 +10,6 @@ from timer import Timer
 dotenv.load_dotenv()
 
 CSV_PATH = os.getenv("CSV_PATH")
-
-logging.basicConfig(format='%(asctime)s %(message)s')
 
 nc_filepaths = [
     "e5.oper.an.sfc.128_164_tcc.ll025sc.1995030100_1995033123.nc",
@@ -83,12 +80,15 @@ def write_csv(df, filepath):
         )
     return filepath
 
+def _tmp(n):
+    return write_csv(weather_dataframe(n), f"{CSV_PATH}/weather_hour{n}.csv")
+
 if __name__ == "__main__":
-    # ds = xr.open_dataset("e5.oper.an.sfc.128_167_2t.ll025sc.1995030100_1995033123.nc")
+    ds = xr.open_dataset("e5.oper.an.sfc.128_167_2t.ll025sc.1995030100_1995033123.nc")
 
-    # Parallel(n_jobs=24)(
-    #     delayed(write_csv)(n)
-    #     for n in tqdm(range(len(ds.time)))
-    # )
+    Parallel(n_jobs=32)(
+        delayed(_tmp)(n)
+        for n in tqdm(range(len(ds.time)))
+    )
 
-    write_csv(weather_dataframe(0, f"{CSV_PATH}/weather_hour{n}.csv"))
+    # write_csv(weather_dataframe(0), f"{CSV_PATH}/weather_hour0.csv")

@@ -75,9 +75,9 @@ def batch_insert_data_using_psycopg3(df, timer, args):
             ) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         with Timer("Constructing data tuples"):
-            data_tuples = []
-            for row in df.itertuples(index=False):
-                data_tuples.append(tuple(row))
+            data_tuples = [tuple(row) for row in df.itertuples(index=False)]
+            # for row in df.itertuples(index=False):
+            #     data_tuples.append(tuple(row))
 
         cur.executemany(insert_query, data_tuples)
         conn.commit()
@@ -124,7 +124,7 @@ def batch_insert_data_using_pandas(df, timer, args):
     engine = get_sqlalchemy_engine()
 
     with timer:
-        df.to_sql("weather", engine, if_exists="append", index=False)
+        df.to_sql("weather", engine, if_exists="append", index=False, method="multi", chunksize=1000)
     
     return
 
