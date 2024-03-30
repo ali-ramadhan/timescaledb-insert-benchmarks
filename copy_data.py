@@ -118,11 +118,6 @@ def copy_data_using_psycopg3(n, args):
     )
 
     with get_psycopg3_connection() as conn, conn.cursor() as cur, full_timer:
-        with Timer("Constructing data tuples"):
-            data_tuples = []
-            for row in df.itertuples(index=False):
-                data_tuples.append(tuple(row))
-        
         with cur.copy("""
             copy weather (
                 time,
@@ -138,7 +133,7 @@ def copy_data_using_psycopg3(n, args):
             ) from stdin
             """
         ) as copy, copy_timer:
-            for row in data_tuples:
+            for row in df.itertuples(index=False, name=None):
                 copy.write_row(row)
     
         conn.commit()
