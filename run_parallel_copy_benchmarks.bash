@@ -6,7 +6,7 @@ source .env
 
 methods=("psycopg3" "copy_csv")
 table_types=("regular" "hyper")
-num_workers=(1 2 4 8 12 16 24 32 42)
+num_workers=(1 2 4 8 12 16 24 32)
 
 wait_for_db_to_be_ready() {
     while ! docker exec -it -u postgres "$CONTAINER_NAME" pg_isready -h "$POSTGRES_HOST" -U "$POSTGRES_USER"; do
