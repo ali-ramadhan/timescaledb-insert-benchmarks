@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-t_regular = 2380.1216
-t_hypertable = 3196.6924
+t_regular = 1920.3047
+t_hypertable = 3105.8773
 t_conversion = 1868.793172
 
 benchmark_times = {
