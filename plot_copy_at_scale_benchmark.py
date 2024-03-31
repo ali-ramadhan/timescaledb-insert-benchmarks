@@ -31,26 +31,27 @@ def num_to_kM(val, pos):
 def main(args):
     df = pd.read_csv(args.benchmarks_file)
 
-    def plot(ax, method, rate, table_type, label):
+    def plot(ax, method, rate, table_type, label, color):
         dfq = df.query(f"method == '{method}' and table_type == '{table_type}'").sort_values(by="hour")
         rows_inserted = dfq["num_rows"].cumsum() / 1e6
         insert_rate = dfq[rate]
         insert_rate_smoothed = insert_rate.rolling(window=10, min_periods=1).mean()
 
-        ax.scatter(rows_inserted, insert_rate, marker=".", alpha=0.2)
-        ax.plot(rows_inserted, insert_rate_smoothed, label=label)
+        ax.scatter(rows_inserted, insert_rate, marker=".", color=color, alpha=0.2)
+        ax.hlines(dfq[rate].mean(), 0, rows_inserted.max(), color=color, alpha=0.5)
+        ax.plot(rows_inserted, insert_rate_smoothed, color=color, label=label)
 
     fig, ax = plt.subplots(figsize=(8, 6))
 
-    plot(ax, "psycopg3", "rate_full", "regular", label="psycopg3 (regular table)")
-    plot(ax, "psycopg3", "rate_full", "hyper", label="psycopg3 (hypertable)")
-    plot(ax, "copy_csv", "rate_full", "regular", label="copy_csv (regular table)")
-    plot(ax, "copy_csv", "rate_full", "hyper", label="copy_csv (hypertable)")
+    plot(ax, "psycopg3", "rate_full", "regular", label="psycopg3 (regular table)", color="tab:blue")
+    plot(ax, "psycopg3", "rate_full", "hyper", label="psycopg3 (hypertable)", color="tab:orange")
+    plot(ax, "copy_csv", "rate_full", "regular", label="copy_csv (regular table)", color="tab:green")
+    plot(ax, "copy_csv", "rate_full", "hyper", label="copy_csv (hypertable)", color="tab:red")
 
     ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(num_to_kM))
 
     ax.set_xlabel("Rows inserted (millions)")
-    ax.set_ylabel("Insert rate (rows per second)")
+    ax.set_ylabel("Overall insert rate (rows per second)")
     ax.legend(frameon=False, ncol=2, loc="upper center", bbox_to_anchor=(0.5, 1.15))
     
     output_filename = Path(args.benchmarks_file).with_suffix(".png")
